@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<artifactId>conuitynlw.pom</artifactId>
+		<groupId>com.symphono.nlw.chat</groupId>
+		<version>1.2-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>openfire</artifactId>
+	<version>1.2-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<name>Conuity NLW Custom Openfire SErver</name>
+	<description>The Conuity NLW custom version of the Openfire XMPP server.</description>
+	<url>http://www.symphono.com</url>
+	<inceptionYear>2015</inceptionYear>
+	
+	<properties>
+		<ant.home>${env.ANT_HOME}</ant.home>
+		<jdk.home>${java.home}</jdk.home>
+	</properties>
+
+	<scm>
+		<connection>scm:git:https://stash.dev.symphono.com:8443/scm/sxp/openfire.git</connection>
+		<developerConnection>scm:git:https://stash.dev.symphono.com:8443/scm/sxp/openfire.git</developerConnection>
+		<url>https://stash.dev.symphono.com:8443/projects/SXP/repos/openfire/browse</url>
+	</scm>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>2.6.1</version>
+				<configuration>
+					<filesets>
+						<fileset>
+							<directory>work</directory>
+						</fileset>
+					</filesets>
+				</configuration>
+			</plugin>
+			
+			<!-- Plugin added to set the target repo property based on the project version -->
+<!--  
+			<plugin>
+				<groupId>org.codehaus.groovy.maven</groupId>
+				<artifactId>gmaven-plugin</artifactId>
+				<version>1.0</version>
+				<executions>
+					<execution>
+						<id>choose-target-repository</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>execute</goal>
+						</goals>
+						<configuration>
+							<source>
+								if (project.version.endsWith("-SNAPSHOT")){
+									project.properties.targetrepository = project.distributionManagement.snapshotRepository.url;
+								}
+								else {
+									project.properties.targetrepository = project.distributionManagement.repository.url;
+								}
+							</source>
+					</configuration>
+					</execution>
+				</executions>
+			</plugin>
+-->
+			<!-- Build Openfire via an ANT build -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.7</version>
+
+				<dependencies>
+					<dependency>
+						<groupId>com.sun</groupId>
+						<artifactId>tools</artifactId>
+						<version>1.5.0</version>
+						<scope>system</scope>
+						<systemPath>${java.home}/../lib/tools.jar</systemPath>
+					</dependency>
+				</dependencies>
+
+				<executions>
+					<execution>
+						<id>build-openfire-jar</id>
+						<phase>process-resources</phase>
+						<configuration>
+							<tasks>
+								<ant antfile="build/build.xml" target="openfire" />
+								<ant antfile="build/build.xml" target="adminPlugin" />
+							</tasks>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Assembly a .tar.gz file that contains all the stuff we changed -->
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.4</version>
+				<configuration>
+					<descriptors>
+						<descriptor>assembly/assembly.xml</descriptor>
+					</descriptors>
+				</configuration>
+				<executions>
+					<execution>
+						<id>assembly-package</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>1.7</version>
+				<executions>
+        				<execution>
+						<id>attach-artifacts</id>
+						<phase>package</phase>
+						<goals>
+							<goal>attach-artifact</goal>
+						</goals>
+						<configuration>
+							<artifacts>
+								<artifact>
+									<file>target/openfire/lib/openfire.jar</file>
+									<type>jar</type>
+								</artifact>
+							</artifacts>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+		</plugins>
+	</build>
+</project>

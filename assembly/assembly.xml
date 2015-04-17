@@ -1,0 +1,38 @@
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+	<id>deployable</id>
+	<includeBaseDirectory>false</includeBaseDirectory>
+	
+	<formats>
+		<format>tar.gz</format>
+	</formats>
+	<fileSets>
+		<!-- Get the jars -->
+		<fileSet>
+			<directory>target/openfire/lib</directory>
+			<outputDirectory>lib/</outputDirectory>
+			<includes>
+				<include>openfire.jar</include>
+			</includes>
+		</fileSet>
+		<!-- Get the configuration -->
+		<fileSet>
+			<directory>target/openfire/plugins/admin/webapp/WEB-INF/lib</directory>
+			<outputDirectory>plugins/admin/webapp/WEB-INF/lib</outputDirectory>
+			<includes>
+				<include>admin-jsp.jar</include>
+			</includes>
+		</fileSet>
+		<!-- Get the i18n resource files -->
+		<fileSet>
+			<directory>src/i18n</directory>
+			<outputDirectory>resources/i18n</outputDirectory>
+		</fileSet>
+		<!-- Get the database resource files -->
+		<fileSet>
+			<directory>target/openfire/resources/database</directory>
+			<outputDirectory>resources/database</outputDirectory>
+		</fileSet>
+	</fileSets>
+</assembly>
