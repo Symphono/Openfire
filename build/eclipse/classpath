@@ -8,6 +8,7 @@
 	<classpathentry kind="src" output="work/plugins-dev/emailListener/target/classes" path="src/plugins/emailListener/src/java"/>
 	<classpathentry kind="src" output="work/plugins-dev/fastpath/target/classes" path="src/plugins/fastpath/src/java"/>
 	<classpathentry kind="src" output="work/plugins-dev/gojara/target/classes" path="src/plugins/gojara/src/java"/>
+	<classpathentry kind="src" output="work/plugins-dev/hazelcast/target/classes" path="src/plugins/hazelcast/src/java"/>
 	<classpathentry kind="src" output="work/plugins-dev/jingleNodes/target/classes" path="src/plugins/jingleNodes/src/java"/>
 	<classpathentry kind="src" output="work/plugins-dev/justmarried/target/classes" path="src/plugins/justmarried/src/java"/>
 	<classpathentry kind="src" output="work/plugins-dev/kraken/target/classes" path="src/plugins/kraken/src/java"/>
