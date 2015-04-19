@@ -12,7 +12,7 @@
 	<version>1.2-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
-	<name>Conuity NLW Custom Openfire SErver</name>
+	<name>Conuity NLW Custom Openfire Server</name>
 	<description>The Conuity NLW custom version of the Openfire XMPP server.</description>
 	<url>http://www.symphono.com</url>
 	<inceptionYear>2015</inceptionYear>
