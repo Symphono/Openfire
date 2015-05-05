@@ -35,6 +35,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import net.sf.jmyspaceiml.log.Log;
+
 import org.dom4j.Element;
 import org.jivesoftware.database.SequenceManager;
 import org.jivesoftware.openfire.PacketRouter;
@@ -51,6 +53,7 @@ import org.jivesoftware.openfire.group.GroupAwareMap;
 import org.jivesoftware.openfire.group.GroupJID;
 import org.jivesoftware.openfire.group.GroupManager;
 import org.jivesoftware.openfire.group.GroupNotFoundException;
+import org.jivesoftware.openfire.interceptor.PacketRejectedException;
 import org.jivesoftware.openfire.muc.CannotBeInvitedException;
 import org.jivesoftware.openfire.muc.ConflictException;
 import org.jivesoftware.openfire.muc.ForbiddenException;
@@ -538,6 +541,17 @@ public class LocalMUCRoom implements MUCRoom, GroupEventListener {
                 throw new UnauthorizedException();
             }
         }
+        
+        try {
+        	if(MUCEventDispatcher.beforeOccupantJoined(getRole().getRoleAddress(), user.getAddress(), nickname)) {
+        		//one of the subscribed listeners wants to terminate this action and take over - let's return
+        		return null;
+        	}
+        } catch(PacketRejectedException pre) {
+        	Log.warn("Room join ({} by {}) has been rejected by 'beforeOccupantJoined' listener", getRole().getRoleAddress(), user.getAddress() );
+        	throw new UnauthorizedException(pre);
+        }
+        
         LocalMUCRole joinRole = null;
         lock.writeLock().lock();
         try {
@@ -744,6 +758,15 @@ public class LocalMUCRoom implements MUCRoom, GroupEventListener {
     }
 
     public void occupantAdded(OccupantAddedEvent event) {
+    	try {    
+    		if(MUCEventDispatcher.beforeOccupantJoined(getRole().getRoleAddress(), event.getUserAddress(), event.getNickname())) {
+    			return;
+    		}
+    	} catch(PacketRejectedException pre) {
+    		Log.warn("Occupant added event ({} by {}) has been rejected by 'beforeOccupantJoined' listener", event.getUserAddress(), getRole().getRoleAddress());
+    		return;
+    	}
+    	
         // Create a proxy for the occupant that joined the room from another cluster node
         RemoteMUCRole joinRole = new RemoteMUCRole(mucService, event);
         JID bareJID = event.getUserAddress().asBareJID();
@@ -858,6 +881,16 @@ public class LocalMUCRoom implements MUCRoom, GroupEventListener {
             // not persistent
             if (occupantsByFullJID.isEmpty() && !isPersistent()) {
                 endTime = System.currentTimeMillis();
+                
+            	try {
+            		if(MUCEventDispatcher.beforeRoomDestroyed(getRole().getRoleAddress())) {
+            			return;
+            		}
+            	} catch(PacketRejectedException pre) {
+            		Log.warn("Destroy room (after last leave) {} has been rejected by 'beforeRoomDestroyed' listener", getRole().getRoleAddress());
+            		return; 
+            	}
+                
                 if (event.isOriginator()) {
                     mucService.removeChatRoom(name);
                     // Fire event that the room has been destroyed
@@ -882,7 +915,18 @@ public class LocalMUCRoom implements MUCRoom, GroupEventListener {
      * @param originator true if this JVM is the one that originated the event.
      */
     private void removeOccupantRole(MUCRole leaveRole, boolean originator) {
-        JID userAddress = leaveRole.getUserAddress();
+    	JID userAddress = leaveRole.getUserAddress();
+    	
+    	try {
+    		if(MUCEventDispatcher.beforeOccupantLeft(getRole().getRoleAddress(), userAddress)) {
+    			return;
+    		}
+    	} catch(PacketRejectedException pre) {
+    		Log.warn("Remove occupant role ({}, {}) has been rejected by 'beforeOccupantLeft' listener", getRole().getRoleAddress(), userAddress);
+    		return;
+    	}
+    	
+        
         // Notify the user that he/she is no longer in the room
         leaveRole.destroy();
         // Update the tables of occupants based on the bare and full JID
@@ -911,6 +955,15 @@ public class LocalMUCRoom implements MUCRoom, GroupEventListener {
     }
 
     public void destroyRoom(DestroyRoomRequest destroyRequest) {
+    	try {
+    		if(MUCEventDispatcher.beforeRoomDestroyed(getRole().getRoleAddress())) {
+    			return;
+    		}
+    	} catch(PacketRejectedException pre) {
+    		Log.warn("Destroy room {} has been rejected by 'beforeRoomDestroyed' listener", getRole().getRoleAddress());
+    		return; 
+    	}
+    	
         JID alternateJID = destroyRequest.getAlternateJID();
         String reason = destroyRequest.getReason();
         Collection<MUCRole> removedRoles = new ArrayList<MUCRole>();
@@ -1010,28 +1063,51 @@ public class LocalMUCRoom implements MUCRoom, GroupEventListener {
         if (isModerated() && senderRole.getRole().compareTo(MUCRole.Role.participant) > 0) {
             throw new ForbiddenException();
         }
-        // Send the message to all occupants
-        message.setFrom(senderRole.getRoleAddress());
-        send(message);
-        // Fire event that message was received by the room
-        MUCEventDispatcher.messageReceived(getRole().getRoleAddress(), senderRole.getUserAddress(),
-                senderRole.getNickname(), message);
+
+        try {
+            if(MUCEventDispatcher.beforeMessageReceived(getRole().getRoleAddress(), senderRole.getUserAddress(), senderRole.getNickname(), message)) {
+            	return;
+            }
+	        // Send the message to all occupants
+	        message.setFrom(senderRole.getRoleAddress());
+	        send(message);
+	        // Fire event that message was received by the room
+	        MUCEventDispatcher.messageReceived(getRole().getRoleAddress(), senderRole.getUserAddress(),
+	                senderRole.getNickname(), message);
+        }catch(PacketRejectedException pre) {
+        	Log.warn("Message {} has been rejected by 'beforeMessageReceived' listener", message );
+        	throw new ForbiddenException(pre);
+        }
     }
 
     public void sendPrivatePacket(Packet packet, MUCRole senderRole) throws NotFoundException {
-        String resource = packet.getTo().getResource();
+    	Message message = null;
+    	String resource = packet.getTo().getResource();
         List<MUCRole> occupants = occupantsByNickname.get(resource.toLowerCase());
         if (occupants == null || occupants.size() == 0) {
             throw new NotFoundException();
         }
+            	
+		if(packet instanceof Message) {
+             message = (Message) packet;
+		}    
+        
         for (MUCRole occupant : occupants) {
-            packet.setFrom(senderRole.getRoleAddress());
-            occupant.send(packet);
-            if(packet instanceof Message) {
-               Message message = (Message) packet;
-                 MUCEventDispatcher.privateMessageRecieved(occupant.getUserAddress(), senderRole.getUserAddress(),
-                         message);
-            }
+        	try {
+        		if(message != null) {
+        			if(MUCEventDispatcher.beforePrivateMessageRecieved(occupant.getUserAddress(), senderRole.getUserAddress(), message)) {
+        				return;
+        			}
+        		}
+	            packet.setFrom(senderRole.getRoleAddress());
+	            occupant.send(packet);
+	            
+	            if(message != null) {
+	                 MUCEventDispatcher.privateMessageRecieved(occupant.getUserAddress(), senderRole.getUserAddress(), message);
+	            }
+        	} catch(PacketRejectedException pre) {
+        		Log.warn("Private message from {} to {} has been rejected by 'beforePrivateMessageRecieved' listener", senderRole.getUserAddress(), occupant.getUserAddress());
+        	}
         }
     }
 
@@ -1932,24 +2008,44 @@ public class LocalMUCRoom implements MUCRoom, GroupEventListener {
     public void nicknameChanged(ChangeNickname changeNickname) {
     	List<MUCRole> occupants = occupantsByNickname.get(changeNickname.getOldNick().toLowerCase());
     	if (occupants != null && occupants.size() > 0) {
-	    	for (MUCRole occupant : occupants) {
-	            // Update the role with the new info
-	    		occupant.setPresence(changeNickname.getPresence());
-	    		occupant.changeNickname(changeNickname.getNewNick());
-	    	}
-	        if (changeNickname.isOriginator()) {
-	            // Fire event that user changed his nickname
-	            MUCEventDispatcher.nicknameChanged(getRole().getRoleAddress(), occupants.get(0).getUserAddress(),
-	                    changeNickname.getOldNick(), changeNickname.getNewNick());
-	        }
-	        // Associate the existing MUCRole with the new nickname
-	        occupantsByNickname.put(changeNickname.getNewNick().toLowerCase(), occupants);
-	        // Remove the old nickname
-	        occupantsByNickname.remove(changeNickname.getOldNick().toLowerCase());
+    		
+    		try {
+    			 if(MUCEventDispatcher.beforeNicknameChanged(getRole().getRoleAddress(), occupants.get(0).getUserAddress(),
+		                    changeNickname.getOldNick(), changeNickname.getNewNick())) {
+    				 return;
+    			 }
+    			
+		    	for (MUCRole occupant : occupants) {
+		            // Update the role with the new info
+		    		occupant.setPresence(changeNickname.getPresence());
+		    		occupant.changeNickname(changeNickname.getNewNick());
+		    	}
+		        if (changeNickname.isOriginator()) {
+		            // Fire event that user changed his nickname
+		            MUCEventDispatcher.nicknameChanged(getRole().getRoleAddress(), occupants.get(0).getUserAddress(),
+		                    changeNickname.getOldNick(), changeNickname.getNewNick());
+		        }
+		        // Associate the existing MUCRole with the new nickname
+		        occupantsByNickname.put(changeNickname.getNewNick().toLowerCase(), occupants);
+		        // Remove the old nickname
+		        occupantsByNickname.remove(changeNickname.getOldNick().toLowerCase());
+    		
+    		} catch(PacketRejectedException pre) {
+    			Log.warn("Nickname change for {} has been rejected by 'beforeNicknameChanged' listener ", changeNickname.getOldNick());
+    		}
     	}
     }
 
     public void changeSubject(Message packet, MUCRole role) throws ForbiddenException {
+    	try {
+    		if(MUCEventDispatcher.beforeRoomSubjectChanged(getRole().getRoleAddress(), role.getUserAddress(), packet.getSubject())) {
+    			return;
+    		}
+    	} catch(PacketRejectedException pre) {
+    		Log.warn("Change subject ({} by {}) has been rejected by 'beforeRoomSubjectChanged' listener", getRole().getRoleAddress(), role.getUserAddress());
+    		throw new ForbiddenException(pre);
+    	}
+    	
         if ((canOccupantsChangeSubject() && role.getRole().compareTo(MUCRole.Role.visitor) < 0) ||
                 MUCRole.Role.moderator == role.getRole()) {
             // Do nothing if the new subject is the same as the existing one
