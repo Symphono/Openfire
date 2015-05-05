@@ -65,7 +65,6 @@
 	<classpathentry kind="lib" path="build/lib/merge/concurrentlinkedhashmap-lru-1.0_jdk5.jar"/>
 	<classpathentry kind="lib" path="build/lib/merge/dbutil.jar"/>
 	<classpathentry kind="lib" path="build/lib/merge/dom4j.jar"/>
-	<classpathentry kind="lib" path="build/lib/merge/javassist.jar"/>
 	<classpathentry kind="lib" path="build/lib/merge/javax-websocket-client-impl.jar"/>
 	<classpathentry kind="lib" path="build/lib/merge/javax-websocket-server-impl.jar"/>
 	<classpathentry kind="lib" path="build/lib/merge/jaxen.jar"/>
@@ -277,5 +276,8 @@
 	<classpathentry kind="lib" path="src/web/WEB-INF/lib/commons-io.jar"/>
 	<classpathentry kind="lib" path="src/web/WEB-INF/lib/dwr.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="lib" path="build/lib/javassist-3.19.0-GA.jar"/>
+	<classpathentry kind="lib" path="build/lib/mockito-all-1.10.19.jar"/>
+	<classpathentry kind="lib" path="build/lib/powermock-mockito-1.6.2-full.jar"/>
 	<classpathentry kind="output" path="work/classes"/>
 </classpath>
