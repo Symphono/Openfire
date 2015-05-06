@@ -7,14 +7,19 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jivesoftware.util.JiveGlobals;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class InterceptorPersistenceUtility {
 
+	private static final Logger Log = LoggerFactory.getLogger(InterceptorPersistenceUtility.class);
+	
 	String REQUIRED_INTERCEPTORS_PROPERTY = "interceptors.required";
 	String BLOCKING_INTERCEPTOR_PROPERTY = "interceptor.blocking";
 	String BLOCKING_INTERCEPTOR_TYPE = BLOCKING_INTERCEPTOR_PROPERTY + "." + "type";
 	String BLOCKING_INTERCEPTOR_EVENT = BLOCKING_INTERCEPTOR_PROPERTY + "." + "event";
-
+	
+	
 	public synchronized void persistRequiredInterceptors(Map<String, RequiredInterceptorDefinition> requiredInterceptors) {
 		Map<String, String> properties = new HashMap<String, String>();
 		String delim = "";
@@ -84,7 +89,7 @@ public class InterceptorPersistenceUtility {
 							continue;
 						}
 						
-						EPacketType packetType = EPacketType.fromString(type);
+						EPacketType packetType = convertToPacketType(type);
 						if(packetType == null) {
 							continue;
 						}
@@ -111,7 +116,7 @@ public class InterceptorPersistenceUtility {
 							continue;
 						}
 						
-						EEventType eventType = EEventType.fromString(event);
+						EEventType eventType = convertToEventType(event);
 						if(eventType == null) {
 							continue;
 						}
@@ -129,4 +134,26 @@ public class InterceptorPersistenceUtility {
 		}
 		return requiredInterceptorsMap;
 	}
+	
+	private EEventType convertToEventType(String eventType) {
+		EEventType eEvent = null;
+		try {
+			eEvent = EEventType.valueOf(eventType);
+		} catch(IllegalArgumentException ia) {
+			Log.warn("{} is not a valid EEventType", eventType);
+		}
+		
+		return eEvent;
+	}
+	
+	private EPacketType convertToPacketType(String packet) {
+		EPacketType ePacket = null;
+		try {
+			ePacket = EPacketType.valueOf(packet);
+		} catch(IllegalArgumentException ia) {
+			Log.warn("{} is not a valid EPacketType", packet);
+		}
+		
+		return ePacket;
+	}	
 }

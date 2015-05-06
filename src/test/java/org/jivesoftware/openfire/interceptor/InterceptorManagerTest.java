@@ -1,28 +1,28 @@
 package org.jivesoftware.openfire.interceptor;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
-import org.jivesoftware.openfire.interceptor.EEventType;
-import org.jivesoftware.openfire.interceptor.EPacketType;
-import org.jivesoftware.openfire.interceptor.InterceptorManager;
-import org.jivesoftware.openfire.interceptor.InterceptorPersistenceUtility;
-import org.jivesoftware.openfire.interceptor.PacketInterceptor2;
-import org.jivesoftware.openfire.interceptor.PacketRejectedException;
-import org.jivesoftware.openfire.interceptor.RequiredInterceptorDefinition;
 import org.jivesoftware.openfire.session.Session;
 import org.jivesoftware.util.JiveGlobals;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
-import org.mockito.Mockito;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
@@ -37,87 +37,96 @@ import org.xmpp.packet.Roster;
 @PrepareForTest({InterceptorManager.class, JiveGlobals.class})
 @SuppressStaticInitializationFor("org.jivesoftware.openfire.interceptor.InterceptorManager")
 public class InterceptorManagerTest {
-	 
+	
+	@Mock
 	private InterceptorPersistenceUtility mockPersistenceUtility;
+	@Mock
 	private Session mockClientSession;
+	@Mock
+	PacketInterceptor2 interceptor;
+	@Mock
+	ReentrantReadWriteLock readWriteLock;
+	@Mock
+	WriteLock writeLock;
 	
 	
 	@Before
 	public void setUp() {
-		 this.mockPersistenceUtility = Mockito.mock(InterceptorPersistenceUtility.class);
-		 this.mockClientSession = Mockito.mock(Session.class);
+		MockitoAnnotations.initMocks(this);
+		Whitebox.setInternalState(InterceptorManager.class, readWriteLock);
+		doReturn(writeLock).when(readWriteLock).writeLock();
 	}
 	
 	@Test
-	public void When_ManagerStarts_Interceptor_Properties_Are_Loaded() throws Exception {		
+	public void whenManagerStartsThenInterceptorPropertiesAreLoaded() throws Exception {		
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
 				 new String[] {"All", "Incoming", "Outgoing", "Processed", "Unprocessed"},
 				 new String[]{"Message", "IQ", "Presence", "Roster"} );
 			  
 		PowerMockito.suppress(PowerMockito.constructor(InterceptorManager.class));
 		 
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		
 		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
-		PacketInterceptor2 interceptor = Mockito.mock(PacketInterceptor2.class);
 		manager.addRequiredInterceptor(interceptor, "Two", new HashSet<EPacketType>(), new HashSet<EEventType>());
 		
 		Collection<PacketInterceptor2> interceptors = manager.getRequiredInterceptors();
 
-		Assert.assertTrue(interceptors.size() == 1);
+		assertEquals(1, interceptors.size());
 	}
 	
+	
 	@Test
-	public void When_Required_Interceptor_Is_Removed_Permanently_Persistence_Utility_Is_Called_The_Second_Time() throws Exception {		
+	public void whenRequiredInterceptorIsRemovedPermanentlyThenPersistenceUtilityIsCalledTheSecondTime() throws Exception {		
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
 				 new String[] {"All", "Incoming", "Outgoing", "Processed", "Unprocessed"},
 				 new String[]{"Message", "IQ", "Presence", "Roster"} );
 			  
 		PowerMockito.suppress(PowerMockito.constructor(InterceptorManager.class));
 		 
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		
 		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
-		PacketInterceptor2 interceptor = Mockito.mock(PacketInterceptor2.class);
 		manager.addRequiredInterceptor(interceptor, "Two", new HashSet<EPacketType>(), new HashSet<EEventType>());
 		
-		Mockito.verify(this.mockPersistenceUtility).persistRequiredInterceptors(Matchers.<Map<String, RequiredInterceptorDefinition>>any());
+		verify(this.mockPersistenceUtility).persistRequiredInterceptors(Matchers.<Map<String, RequiredInterceptorDefinition>>any());
 		
 		manager.removeRequiredInterceptor("Two", true);
-		Mockito.verify(this.mockPersistenceUtility, org.mockito.Mockito.times(2)).persistRequiredInterceptors(Matchers.<Map<String, RequiredInterceptorDefinition>>any());
+		verify(this.mockPersistenceUtility, times(2)).persistRequiredInterceptors(Matchers.<Map<String, RequiredInterceptorDefinition>>any());
 	}
 	
+	
 	@Test
-	public void When_Required_Interceptor_Is_NOT_Removed_Permanently_Persistence_Utility_Is_Called_Only_Once() throws Exception {		
+	public void whenRequiredInterceptorIsNOTRemovedPermanentlyThenPersistenceUtilityIsCalledOnlyOnce() throws Exception {		
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
 				 new String[] {"All", "Incoming", "Outgoing", "Processed", "Unprocessed"},
 				 new String[]{"Message", "IQ", "Presence", "Roster"} );
 			  
 		PowerMockito.suppress(PowerMockito.constructor(InterceptorManager.class));
 		 
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		
 		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
-		PacketInterceptor2 interceptor = Mockito.mock(PacketInterceptor2.class);
 		manager.addRequiredInterceptor(interceptor, "Two", new HashSet<EPacketType>(), new HashSet<EEventType>());
 		
-		Mockito.verify(this.mockPersistenceUtility).persistRequiredInterceptors(Matchers.<Map<String, RequiredInterceptorDefinition>>any());
+		verify(this.mockPersistenceUtility).persistRequiredInterceptors(Matchers.<Map<String, RequiredInterceptorDefinition>>any());
 		
 		manager.removeRequiredInterceptor("Two", false);
-		Mockito.verify(this.mockPersistenceUtility).persistRequiredInterceptors(Matchers.<Map<String, RequiredInterceptorDefinition>>any());
-	}	
+		verify(this.mockPersistenceUtility).persistRequiredInterceptors(Matchers.<Map<String, RequiredInterceptorDefinition>>any());
+	}
+	
 	
 	@Test
-	public void When_Required_Interceptors_Are_Registered_No_Packets_Are_Blocked() throws Exception {		
+	public void whenRequiredInterceptorsAreRegisteredThenNoPacketsAreBlocked() throws Exception {		
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
 				 new String[] { "Incoming", "Outgoing", "Processed"},
 				 new String[]{"Message", "IQ", "Presence", "Roster"} );
@@ -129,13 +138,12 @@ public class InterceptorManagerTest {
 		definitionMap.putAll(definitionMap2);
 		PowerMockito.suppress(PowerMockito.constructor(InterceptorManager.class));
 		 
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 
 		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
-		PacketInterceptor2 interceptor = Mockito.mock(PacketInterceptor2.class);
 		manager.addRequiredInterceptor(interceptor, "One", new HashSet<EPacketType>(), new HashSet<EEventType>());
 		manager.addRequiredInterceptor(interceptor, "Two", new HashSet<EPacketType>(), new HashSet<EEventType>());
 		
@@ -145,8 +153,9 @@ public class InterceptorManagerTest {
 		manager.invokeInterceptors(new Roster(), this.mockClientSession, false, false);
 	}
 	
+	
 	@Test
-	public void When_Not_All_Required_Interceptors_Are_Registered_Packets_Are_Blocked() throws Exception {		
+	public void whenNotAllRequiredInterceptorsAreRegisteredThenPacketsAreBlocked() throws Exception {		
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
 				 new String[] { "Incoming", "Outgoing", "Processed"},
 				 new String[]{"Message", "IQ", "Presence", "Roster"} );
@@ -158,13 +167,12 @@ public class InterceptorManagerTest {
 		definitionMap.putAll(definitionMap2);
 		PowerMockito.suppress(PowerMockito.constructor(InterceptorManager.class));
 		 
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 
 		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
-		PacketInterceptor2 interceptor = Mockito.mock(PacketInterceptor2.class);
 		manager.addRequiredInterceptor(interceptor, "Two", new HashSet<EPacketType>(), new HashSet<EEventType>());
 		
 		try {
@@ -190,7 +198,7 @@ public class InterceptorManagerTest {
 	
 
 	@Test
-	public void When_Interceptors_Are_Registered_Blocking_Sets_Are_Populated_Correctyly() throws Exception {		
+	public void whenInterceptorsAreRegisteredThenBlockingSetsArePopulatedCorrectyly() throws Exception {		
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
 				 new String[] { "Incoming", "Outgoing", "Processed"},
 				 new String[]{"Message", "IQ", "Presence", "Roster"} );
@@ -202,24 +210,25 @@ public class InterceptorManagerTest {
 		definitionMap.putAll(definitionMap2);
 		PowerMockito.suppress(PowerMockito.constructor(InterceptorManager.class));
 		 
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 
 		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		 
-		Assert.assertTrue(manager.getEventTypesToBlock().contains(EEventType.Incoming));
-		Assert.assertTrue(manager.getEventTypesToBlock().contains(EEventType.Outgoing));
-		Assert.assertTrue(manager.getEventTypesToBlock().contains(EEventType.Processed));
+		assertTrue(manager.getEventTypesToBlock().contains(EEventType.Incoming));
+		assertTrue(manager.getEventTypesToBlock().contains(EEventType.Outgoing));
+		assertTrue(manager.getEventTypesToBlock().contains(EEventType.Processed));
 		
-		Assert.assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.Message));
-		Assert.assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.IQ));
-		Assert.assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.Presence));
-		Assert.assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.Roster));
+		assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.Message));
+		assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.IQ));
+		assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.Presence));
+		assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.Roster));
 	}
 	
+	
 	@Test
-	public void When_Both_Interceptors_Are_Registered_Blocking_Sets_Are_Populated_Correctyly() throws Exception {		
+	public void whenBothInterceptorsAreRegisteredThenBlockingSetsArePopulatedCorrectyly() throws Exception {		
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
 				 new String[] { "Incoming", "Outgoing", "Processed"},
 				 new String[]{"Message", "IQ", "Roster"} );
@@ -231,25 +240,26 @@ public class InterceptorManagerTest {
 		definitionMap.putAll(definitionMap2);
 		PowerMockito.suppress(PowerMockito.constructor(InterceptorManager.class));
 		 
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 
 		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		 
-		Assert.assertTrue(manager.getEventTypesToBlock().contains(EEventType.Incoming));
-		Assert.assertTrue(manager.getEventTypesToBlock().contains(EEventType.Outgoing));
-		Assert.assertTrue(manager.getEventTypesToBlock().contains(EEventType.Processed));
-		Assert.assertTrue(manager.getEventTypesToBlock().contains(EEventType.Unprocessed));
+		assertTrue(manager.getEventTypesToBlock().contains(EEventType.Incoming));
+		assertTrue(manager.getEventTypesToBlock().contains(EEventType.Outgoing));
+		assertTrue(manager.getEventTypesToBlock().contains(EEventType.Processed));
+		assertTrue(manager.getEventTypesToBlock().contains(EEventType.Unprocessed));
 		
-		Assert.assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.Message));
-		Assert.assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.IQ));
-		Assert.assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.Presence));
-		Assert.assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.Roster));
-	}	
+		assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.Message));
+		assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.IQ));
+		assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.Presence));
+		assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.Roster));
+	}
+	
 	
 	@Test
-	public void When_One_Of_The_Interceptors_Contains_All_Blocking_Sets_Are_Populated_Correctyly() throws Exception {
+	public void whenOneOfTheInterceptorsContainsAllThenBlockingSetsArePopulatedCorrectyly() throws Exception {
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
 				 new String[] { "Incoming", "Outgoing", "Processed"},
 				 new String[]{"Message", "IQ", "Roster"} );
@@ -261,25 +271,25 @@ public class InterceptorManagerTest {
 		definitionMap.putAll(definitionMap2);
 		PowerMockito.suppress(PowerMockito.constructor(InterceptorManager.class));
 		 
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 
 		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		 
-		Assert.assertTrue(manager.getEventTypesToBlock().size() == 1);
-		Assert.assertTrue(manager.getPacketTypesToBlock().size() == 1);
+		assertEquals(1, manager.getEventTypesToBlock().size());
+		assertEquals(1, manager.getPacketTypesToBlock().size());
 		
-		Assert.assertTrue(manager.getEventTypesToBlock().contains(EEventType.All));
-		Assert.assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.All));
+		assertTrue(manager.getEventTypesToBlock().contains(EEventType.All));
+		assertTrue(manager.getPacketTypesToBlock().contains(EPacketType.All));
 	}
 	
 	
 	@Test
-	public void When_Configured_To_Block_All_Packets_All_Events_All_Packets_Are_Rejected() throws Exception {		
+	public void whenConfiguredToBlockAllPacketsAndAllEventsThenAllPacketsAreRejected() throws Exception {		
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"All"}, new String[]{"All"} );
 		
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();		 
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		
 		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
@@ -302,10 +312,10 @@ public class InterceptorManagerTest {
 
 
 	@Test
-	public void When_Not_Configured_To_Block_Anything_No_Packets_Are_Rejected() throws Exception {		
+	public void whenNotConfiguredToBlockAnythingThenNoPacketsAreRejected() throws Exception {		
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {}, new String[]{} );		 		 
 		
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 				 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		 	
@@ -319,10 +329,10 @@ public class InterceptorManagerTest {
 	
 	
 	@Test
-	public void When_Incoming_Packets_Arrive_They_Will_Be_Rejected() throws Exception {
+	public void whenIncomingPacketsArriveThenTheyWillBeRejected() throws Exception {
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"Incoming"}, new String[]{} );
 		  		 
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		 	
@@ -340,15 +350,14 @@ public class InterceptorManagerTest {
 		
 		 manager.invokeInterceptors(new Presence(), this.mockClientSession, false, true);
 		 manager.invokeInterceptors(new Roster(), this.mockClientSession, false, false);
-		 
 	}
 	
 
 	@Test
-	public void When_Incoming_And_Outgoin_Packets_Arrive_They_Will_Be_Rejected() throws Exception {
+	public void whenIncomingAndOutgoinPacketsArriveThenTheyWillBeRejected() throws Exception {
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"Incoming", "Outgoing"}, new String[]{} );
 		  		 
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		 	
@@ -377,10 +386,10 @@ public class InterceptorManagerTest {
 	
 
 	@Test
-	public void When_Messages_Are_Blocked_Message_Packets_Will_Be_Rejected() throws Exception {
+	public void whenMessagesAreBlockedThenMessagePacketsWillBeRejected() throws Exception {
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {}, new String[]{"Message"} );
 		  		 
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		 	
@@ -398,10 +407,10 @@ public class InterceptorManagerTest {
 	
 
 	@Test
-	public void When_Messages_And_IQs_Are_Blocked_Packets_Will_Be_Rejected() throws Exception {
+	public void whenMessagesAndIQsAreBlockedThenPacketsWillBeRejected() throws Exception {
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {}, new String[]{"Message", "IQ"} );
 		  		 
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		 	
@@ -419,15 +428,14 @@ public class InterceptorManagerTest {
 		
 		manager.invokeInterceptors(new Presence(), this.mockClientSession, false, true);
 		manager.invokeInterceptors(new Roster(), this.mockClientSession, false, false);
-	}	
-	
+	}
 	
 
 	@Test
-	public void When_Incoming_Messages_Are_Blocked_Packets_Will_Be_Rejected() throws Exception {
+	public void whenIncomingMessagesAreBlockedThenPacketsWillBeRejected() throws Exception {
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"Incoming"}, new String[]{"Message"} );
 		  		 
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		 	
@@ -446,10 +454,10 @@ public class InterceptorManagerTest {
 	
 
 	@Test
-	public void When_Incoming_And_Outgoing_Messages_Are_Blocked_Packets_Will_Be_Rejected() throws Exception {
+	public void whenIncomingAndOutgoingMessagesAreBlockedThenPacketsWillBeRejected() throws Exception {
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"Incoming", "Outgoing"}, new String[]{"Message"} );
 		  		 
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		 	
@@ -472,10 +480,10 @@ public class InterceptorManagerTest {
 	
 
 	@Test
-	public void When_Incoming_And_Outgoing_Messages_And_IQs_Are_Blocked_Packets_Will_Be_Rejected() throws Exception {
+	public void whenIncomingAndOutgoingMessagesAndIQsAreBlockedThenPacketsWillBeRejected() throws Exception {
 		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"Incoming", "Outgoing"}, new String[]{"Message", "IQ"} );
 		  		 
-		Mockito.doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
+		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		 	
@@ -504,7 +512,6 @@ public class InterceptorManagerTest {
  		manager.invokeInterceptors(new Presence(), this.mockClientSession, false, true);//outgoing
 		manager.invokeInterceptors(new Roster(), this.mockClientSession, false, false);//outgoing
 	}
-	
 
 
 	private Map<String, RequiredInterceptorDefinition> createDefinitions(String name, String[] eventTypes, String[] packetTypes) {
@@ -512,7 +519,7 @@ public class InterceptorManagerTest {
 		 
 		 Set<EEventType> eventSet = new HashSet<EEventType>();
 		 for(String eventType: eventTypes) {
-			 EEventType event = EEventType.fromString(eventType);
+			 EEventType event = EEventType.valueOf(eventType);
 			 if(event != null) {
 				 eventSet.add(event);
 			 }
@@ -520,7 +527,7 @@ public class InterceptorManagerTest {
 		 
 		 Set<EPacketType> packetSet = new HashSet<EPacketType>();
 		 for(String packetType : packetTypes) {
-			 EPacketType packet = EPacketType.fromString(packetType);
+			 EPacketType packet = EPacketType.valueOf(packetType);
 			 if(packet != null) {
 				 packetSet.add(packet);
 			 }

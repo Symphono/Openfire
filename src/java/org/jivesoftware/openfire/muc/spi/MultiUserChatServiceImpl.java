@@ -48,10 +48,10 @@ import org.jivesoftware.openfire.disco.ServerItemsProvider;
 import org.jivesoftware.openfire.group.ConcurrentGroupList;
 import org.jivesoftware.openfire.group.GroupAwareList;
 import org.jivesoftware.openfire.group.GroupJID;
-import org.jivesoftware.openfire.interceptor.PacketRejectedException;
 import org.jivesoftware.openfire.muc.HistoryStrategy;
 import org.jivesoftware.openfire.muc.MUCEventDelegate;
 import org.jivesoftware.openfire.muc.MUCEventDispatcher;
+import org.jivesoftware.openfire.muc.MUCEventRejectedException;
 import org.jivesoftware.openfire.muc.MUCRole;
 import org.jivesoftware.openfire.muc.MUCRoom;
 import org.jivesoftware.openfire.muc.MUCUser;
@@ -555,9 +555,9 @@ public class MultiUserChatServiceImpl implements Component, MultiUserChatService
 	                            if(MUCEventDispatcher.beforeRoomCreated(room.getRole().getRoleAddress(), userjid)) {
 	                            	return null;
 	                            }
-                            } catch (PacketRejectedException pre) {
+                            } catch (MUCEventRejectedException ere) {
                             	Log.warn("Room creation {} by {} has been rejected by 'beforeRoomCreated' listener", room.getRole().getRoleAddress(), userjid);
-                            	throw new NotAllowedException(pre);
+                            	throw new NotAllowedException(ere);
                             }                    	
                         // The room does not exist so check for creation permissions
                         // Room creation is always allowed for sysadmin

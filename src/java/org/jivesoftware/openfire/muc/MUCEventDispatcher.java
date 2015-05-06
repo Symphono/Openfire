@@ -18,7 +18,7 @@
  */
 package org.jivesoftware.openfire.muc;
 
-import org.jivesoftware.openfire.interceptor.PacketRejectedException;
+import org.jivesoftware.openfire.DuplicateRegistrationException;
 import org.xmpp.packet.JID;
 import org.xmpp.packet.Message;
 
@@ -30,6 +30,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 /**
  * Dispatches MUC events. The following events are supported:
@@ -50,6 +52,8 @@ public class MUCEventDispatcher {
 	
     private static Collection<MUCEventListener> listeners = new ConcurrentLinkedQueue<MUCEventListener>();
     
+    private static final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    
     private static final MUCListenerPersistenceUtility persistenceUtility;
     private static Map<String, MUCEventListener2> requiredListenersByName = new ConcurrentHashMap<String, MUCEventListener2>();
     private static Collection<MUCEventListener2> requiredListeners = new ConcurrentLinkedQueue<MUCEventListener2>();
@@ -59,15 +63,33 @@ public class MUCEventDispatcher {
     static {
     	persistenceUtility = new MUCListenerPersistenceUtility();
     	allRequiredListeners = persistenceUtility.loadRequiredListeners();
-    	calculateEventsToBlock();
+    	determineEventsToBlock();
     }
 
     public static void addRequiredListener(MUCEventListener2 listener, String name, Set<EMUCEventType> eventTypes) {
-    	synchronized(MUCEventDispatcher.class) {
-	    	requiredListenersByName.put(name, listener);
+    	if(listener == null) {
+    		throw new IllegalArgumentException("'listener' is a required argument");
+    	}
+    	if(name == null) {
+    		throw new IllegalArgumentException("'name' is a required argument");
+    	}
+    	if(eventTypes == null) {
+    		throw new IllegalArgumentException("'eventTypes' is a required argument");
+    	}
+    	
+    	WriteLock lock = readWriteLock.writeLock();
+    	lock.lock();
+    	try {
+	    	if(requiredListenersByName.put(name, listener) != null) {
+	    		throw new DuplicateRegistrationException("Required listener already registered with the name '" + name + "'");
+	    	}
+	    	
 	    	allRequiredListeners.put(name, eventTypes);
-	    	calculateEventsToBlock();
+	    	determineEventsToBlock();
 	    	requiredListeners.add(listener);
+	    	addListener(listener);
+    	} finally {
+    		lock.unlock();
     	}
     	
     	persistenceUtility.persistRequiredListeners(allRequiredListeners);
@@ -78,13 +100,14 @@ public class MUCEventDispatcher {
 	    	MUCEventListener2 listener = requiredListenersByName.remove(name);
 	    	if(listener != null) {
 	    		requiredListeners.remove(listener);
+	    		removeListener(listener);
 	    	}
     	    	
 	    	//it is not a required event listener anymore
 	    	if(markAsNotRequired) {
 	    		allRequiredListeners.remove(name);
 	    	}    	
-	    	calculateEventsToBlock();
+	    	determineEventsToBlock();
     	}
     	
     	if(markAsNotRequired) {    		
@@ -108,7 +131,7 @@ public class MUCEventDispatcher {
         listeners.remove(listener);
     }
     
-    public static boolean beforeOccupantJoined(JID roomJID, JID user, String nickname) throws PacketRejectedException {
+    public static boolean beforeOccupantJoined(JID roomJID, JID user, String nickname) throws MUCEventRejectedException {
     	boolean result = false;
     	
     	if(isEventAllowed(EMUCEventType.BeforeJoined)) {
@@ -124,45 +147,18 @@ public class MUCEventDispatcher {
     }
 
     public static void occupantJoined(JID roomJID, JID user, String nickname) {
-    	if(isEventAllowed(EMUCEventType.Joined)) {
-	    	for (MUCEventListener2 listener : requiredListeners) {    		
-	            listener.occupantJoined(roomJID, user, nickname);
-	        }    	
-    	}
-    	
         for (MUCEventListener listener : listeners) {
             listener.occupantJoined(roomJID, user, nickname);
         }
     }
-
-    public static boolean beforeOccupantLeft(JID roomJID, JID user) throws PacketRejectedException {
-    	boolean result = false;
-    	
-    	if(isEventAllowed(EMUCEventType.BeforeLeft)) {
-	        for (MUCEventListener2 listener : requiredListeners) {        	
-	        	if(listener.beforeOccupantLeft(roomJID, user)) {
-	        		result = true;
-	        		break;
-	        	}
-	        } 
-    	}
-    	
-    	return result;
-    }
     
     public static void occupantLeft(JID roomJID, JID user) {
-    	if(isEventAllowed(EMUCEventType.Left)) {    	
-	    	for (MUCEventListener2 listener : requiredListeners) {        	
-	        	listener.occupantLeft(roomJID, user);
-	        }    	
-    	}
-    	
         for (MUCEventListener listener : listeners) {
             listener.occupantLeft(roomJID, user);
         }
     }
     
-    public static boolean beforeNicknameChanged(JID roomJID, JID user, String oldNickname, String newNickname) throws PacketRejectedException {
+    public static boolean beforeNicknameChanged(JID roomJID, JID user, String oldNickname, String newNickname) throws MUCEventRejectedException {
     	boolean result = false;
     	
     	if(isEventAllowed(EMUCEventType.BeforeNickChanged)) {
@@ -178,18 +174,12 @@ public class MUCEventDispatcher {
     }
 
     public static void nicknameChanged(JID roomJID, JID user, String oldNickname, String newNickname) {
-    	if(isEventAllowed(EMUCEventType.NickChanged)) {
-	    	for (MUCEventListener2 listener : requiredListeners) {        	
-	            listener.nicknameChanged(roomJID, user, oldNickname, newNickname);
-	        }
-    	}
-        
         for (MUCEventListener listener : listeners) {
             listener.nicknameChanged(roomJID, user, oldNickname, newNickname);
         }
     }
 
-    public static boolean beforeMessageReceived(JID roomJID, JID user, String nickname, Message message) throws PacketRejectedException {
+    public static boolean beforeMessageReceived(JID roomJID, JID user, String nickname, Message message) throws MUCEventRejectedException {
     	boolean result = false;
     	
     	if(isEventAllowed(EMUCEventType.BeforeMessageReceived)) {
@@ -205,18 +195,12 @@ public class MUCEventDispatcher {
     }
     
     public static void messageReceived(JID roomJID, JID user, String nickname, Message message) {
-    	if(isEventAllowed(EMUCEventType.MessageReceived)) {    	
-	    	for (MUCEventListener2 listener : requiredListeners) {
-	            listener.messageReceived(roomJID, user, nickname, message);
-	        }
-    	}
-        
         for (MUCEventListener listener : listeners) {
             listener.messageReceived(roomJID, user, nickname, message);
         }
     }
 
-    public static boolean beforePrivateMessageRecieved(JID toJID, JID fromJID, Message message) throws PacketRejectedException {
+    public static boolean beforePrivateMessageRecieved(JID toJID, JID fromJID, Message message) throws MUCEventRejectedException {
     	boolean result = false;
     	
     	if(isEventAllowed(EMUCEventType.BeforePrivateMessageReceived)) {
@@ -232,18 +216,12 @@ public class MUCEventDispatcher {
     }
     
     public static void privateMessageRecieved(JID toJID, JID fromJID, Message message) {
-    	if(isEventAllowed(EMUCEventType.PrivateMessageReceived)) {
-	        for (MUCEventListener2 listener : requiredListeners) {
-	            listener.privateMessageRecieved(toJID, fromJID, message);
-	        }
-    	}
-        
         for (MUCEventListener listener : listeners) {
             listener.privateMessageRecieved(toJID, fromJID, message);
         }
     }
 
-    public static boolean beforeRoomCreated(JID roomJID, JID userJID) throws PacketRejectedException {
+    public static boolean beforeRoomCreated(JID roomJID, JID userJID) throws MUCEventRejectedException {
     	boolean result = false;
     	
     	if(isEventAllowed(EMUCEventType.BeforeCreated)) {
@@ -259,18 +237,12 @@ public class MUCEventDispatcher {
     }
     
     public static void roomCreated(JID roomJID) {
-    	if(isEventAllowed(EMUCEventType.Created)) {
-	        for (MUCEventListener2 listener : requiredListeners) {
-	            listener.roomCreated(roomJID);
-	        }
-    	}
-    	
         for (MUCEventListener listener : listeners) {
             listener.roomCreated(roomJID);
         }
     }
 
-    public static boolean beforeRoomDestroyed(JID roomJID) throws PacketRejectedException {
+    public static boolean beforeRoomDestroyed(JID roomJID) throws MUCEventRejectedException {
     	boolean result = false;
     	
     	if(isEventAllowed(EMUCEventType.BeforeDestroyed)) {
@@ -286,18 +258,12 @@ public class MUCEventDispatcher {
     }
     
     public static void roomDestroyed(JID roomJID) {
-    	if(isEventAllowed(EMUCEventType.Destroyed)) {
-	        for (MUCEventListener2 listener : requiredListeners) {
-	            listener.roomDestroyed(roomJID);
-	        }
-    	}
-    	
     	for (MUCEventListener listener : listeners) {
             listener.roomDestroyed(roomJID);
         }
     }
     
-    public static boolean beforeRoomSubjectChanged(JID roomJID, JID user, String newSubject) throws PacketRejectedException {
+    public static boolean beforeRoomSubjectChanged(JID roomJID, JID user, String newSubject) throws MUCEventRejectedException {
     	boolean result = false;
     	
     	if(isEventAllowed(EMUCEventType.BeforeSubjectChanged)) {
@@ -313,18 +279,12 @@ public class MUCEventDispatcher {
     }
 
     public static void roomSubjectChanged(JID roomJID, JID user, String newSubject) {
-    	if(isEventAllowed(EMUCEventType.SubjectChanged)) {
-	        for (MUCEventListener2 listener : requiredListeners) {
-	            listener.roomSubjectChanged(roomJID, user, newSubject);
-	        }
-    	}
-        
     	for (MUCEventListener listener : listeners) {
             listener.roomSubjectChanged(roomJID, user, newSubject);
         }
     }
     
-    private static void calculateEventsToBlock() {
+    private static void determineEventsToBlock() {
         Set<EMUCEventType> toBlock = new HashSet<EMUCEventType>();    	
 
     	for(Entry<String, Set<EMUCEventType>> entry : allRequiredListeners.entrySet()) {

@@ -7,8 +7,12 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jivesoftware.util.JiveGlobals;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MUCListenerPersistenceUtility {
+	
+	private static final Logger Log = LoggerFactory.getLogger(MUCListenerPersistenceUtility.class);
 
 	String REQUIRED_LISTENERS_PROPERTY = "muc.listeners.required";
 	String BLOCKING_LISTENER_EVENT =  "muc.listener.blocking.event";
@@ -75,7 +79,7 @@ public class MUCListenerPersistenceUtility {
 							continue;
 						}
 						
-						EMUCEventType eventType = EMUCEventType.fromString(event);
+						EMUCEventType eventType = convertToMUCEventType(event);
 						if(eventType == null) {
 							continue;
 						}
@@ -88,5 +92,16 @@ public class MUCListenerPersistenceUtility {
 			}
 		}
 		return requiredMUCListeners;
+	}
+	
+	private EMUCEventType convertToMUCEventType(String eventType) {
+		EMUCEventType eEvent = null;
+		try {
+			eEvent = EMUCEventType.valueOf(eventType);
+		} catch(IllegalArgumentException ia) {
+			Log.warn("{} is not a valid EMUCEventType", eventType);
+		}
+		
+		return eEvent;
 	}
 }

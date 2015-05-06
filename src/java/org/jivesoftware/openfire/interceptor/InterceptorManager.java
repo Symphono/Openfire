@@ -29,7 +29,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
+import org.jivesoftware.openfire.DuplicateRegistrationException;
 import org.jivesoftware.openfire.XMPPServer;
 import org.jivesoftware.openfire.session.Session;
 import org.slf4j.Logger;
@@ -54,10 +57,11 @@ import org.xmpp.packet.Packet;
  */
 public class InterceptorManager {
 
-	
 	private static final Logger Log = LoggerFactory.getLogger(InterceptorManager.class);
-
+	
     private static InterceptorManager instance = new InterceptorManager();
+    
+    private static final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     
     private XMPPServer server = XMPPServer.getInstance();
     private List<PacketInterceptor> globalInterceptors = new CopyOnWriteArrayList<PacketInterceptor>();
@@ -76,7 +80,7 @@ public class InterceptorManager {
     private InterceptorManager() {
     	persistenceUtility = new InterceptorPersistenceUtility();
     	this.allRequiredInterceptors.putAll(persistenceUtility.loadRequiredInterceptors());
-    	calculatePacketTypesToBlock();
+    	determinePacketTypesToBlock();
     }
     
 
@@ -108,12 +112,33 @@ public class InterceptorManager {
      * @param eventTypes - events to be rejected if the required interceptor is not present
      */    
     public void addRequiredInterceptor(PacketInterceptor2 interceptor, String name, Set<EPacketType> packetTypes, Set<EEventType> eventTypes) {
+    	if(interceptor == null) {
+    		throw new IllegalArgumentException("'interceptor' is a required argument");
+    	}
+    	if(name == null) {
+    		throw new IllegalArgumentException("'name' is a required argument");
+    	}
+    	if(packetTypes == null) {
+    		throw new IllegalArgumentException("'packetTypes' is a required argument");
+    	}
+    	if(eventTypes == null) {
+    		throw new IllegalArgumentException("'eventTypes' is a required argument");
+    	}    	
+    	
     	RequiredInterceptorDefinition requiredInterceptorDefinition = new RequiredInterceptorDefinition(eventTypes, packetTypes);
-    	synchronized(this) {
-	    	this.requiredInterceptorsByName.put(name, interceptor);
+    	
+    	WriteLock lock = readWriteLock.writeLock();
+    	lock.lock();
+    	try {
+	    	if(this.requiredInterceptorsByName.put(name, interceptor) != null) {
+	    		throw new DuplicateRegistrationException("Required interceptor already registered with the name '" + name + "'");
+	    	}
 	    	this.allRequiredInterceptors.put(name, requiredInterceptorDefinition);
-	    	calculatePacketTypesToBlock();    	
+	    	determinePacketTypesToBlock();    	
 	    	this.requiredInterceptors.add(interceptor);
+     
+    	} finally {
+    		lock.unlock();
     	}
 
     	this.persistenceUtility.persistRequiredInterceptors(this.allRequiredInterceptors);
@@ -136,7 +161,7 @@ public class InterceptorManager {
 	    	if(markAsNotRequired) {
 	    		allRequiredInterceptors.remove(name);
 	    	}    	
-	    	calculatePacketTypesToBlock();
+	    	determinePacketTypesToBlock();
     	}
     	
     	if(markAsNotRequired) {
@@ -148,7 +173,7 @@ public class InterceptorManager {
      * Figures out which events and packet types should be blocked based on the list of all required interceptors and interceptors
      * currently present.
      */
-    private void calculatePacketTypesToBlock() {
+    private void determinePacketTypesToBlock() {
         Set<EEventType> eventTypesToBlock = new HashSet<EEventType>();
         Set<EPacketType> packetTypesToBlock = new HashSet<EPacketType>();        
 
@@ -468,12 +493,7 @@ public class InterceptorManager {
      * @return - boolean - returns true if this event should be blocked
      */
     private boolean shouldBlockEvent(boolean processed, boolean read) {
-      	 /*	All,
-   			Presence,
-   			IQ,
-   			Message,
-   			Roster
-       	 */
+
     	boolean result = false;
     	
     	if(this.eventTypesToBlock.contains(EEventType.All)) {
@@ -504,12 +524,7 @@ public class InterceptorManager {
      * @return - boolean- returns true if this packet should be blocked
      */
     private boolean shouldBlockPacket(Packet packet) {
-    	/*	All,
-			Incoming,
-			Outgoing,
-			Processed,
-			Unprocessed
-   	  */    	
+  	
     	boolean result = false;
     	
     	if(this.packetTypesToBlock.contains(EPacketType.All)) {
