@@ -74,8 +74,8 @@ public class InterceptorManager {
   
     private InterceptorPersistenceUtility persistenceUtility;
     
-    private volatile Set<EEventType> eventTypesToBlock;
-    private volatile Set<EPacketType> packetTypesToBlock;
+    private Set<EEventType> eventTypesToBlock;
+    private Set<EPacketType> packetTypesToBlock;
     
     private InterceptorManager() {
     	persistenceUtility = new InterceptorPersistenceUtility();
@@ -111,7 +111,8 @@ public class InterceptorManager {
      * @param packetTypes - packet types that will be rejected if the required interceptor is not present
      * @param eventTypes - events to be rejected if the required interceptor is not present
      */    
-    public void addRequiredInterceptor(PacketInterceptor2 interceptor, String name, Set<EPacketType> packetTypes, Set<EEventType> eventTypes) {
+    public void addRequiredInterceptor(PacketInterceptor2 interceptor, String name, Set<EPacketType> packetTypes, Set<EEventType> eventTypes)
+    		throws DuplicateRegistrationException {
     	if(interceptor == null) {
     		throw new IllegalArgumentException("'interceptor' is a required argument");
     	}
@@ -534,7 +535,7 @@ public class InterceptorManager {
     	if(packet instanceof org.xmpp.packet.Roster && this.packetTypesToBlock.contains(EPacketType.Roster)) {
     		result = true;
     	}
-    	else if (packet.getClass().equals(org.xmpp.packet.IQ.class) && this.packetTypesToBlock.contains(EPacketType.IQ)) {
+    	else if (packet instanceof org.xmpp.packet.IQ && this.packetTypesToBlock.contains(EPacketType.IQ)) {
     		result = true;
     	}
     	else if (packet instanceof org.xmpp.packet.Presence && this.packetTypesToBlock.contains(EPacketType.Presence)) {

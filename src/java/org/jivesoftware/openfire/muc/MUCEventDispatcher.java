@@ -58,7 +58,7 @@ public class MUCEventDispatcher {
     private static Map<String, MUCEventListener2> requiredListenersByName = new ConcurrentHashMap<String, MUCEventListener2>();
     private static Collection<MUCEventListener2> requiredListeners = new ConcurrentLinkedQueue<MUCEventListener2>();
     private static Map<String, Set<EMUCEventType>> allRequiredListeners;
-    private static volatile Set<EMUCEventType> eventTypesToBlock;
+    private static Set<EMUCEventType> eventTypesToBlock;
   
     static {
     	persistenceUtility = new MUCListenerPersistenceUtility();
