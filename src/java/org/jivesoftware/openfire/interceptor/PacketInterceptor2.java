@@ -21,7 +21,7 @@ import org.xmpp.packet.Packet;
  * 	{@link PacketRejectedException} will be thrown.
  */
 
-public interface PacketInterceptor2 {
+public interface PacketInterceptor2 extends PacketInterceptor{
 
     /**
      * Invokes the required interceptor on the specified packet. The interceptor can either modify
@@ -48,6 +48,6 @@ public interface PacketInterceptor2 {
      * 						notifying the client about possible packet rejection.
      * @throws PacketRejectedException if the packet should be prevented from being processed.
      */
-	 boolean interceptPacket(Packet packet, Session session, boolean incoming, boolean processed)
+	 boolean interceptPacket2(Packet packet, Session session, boolean incoming, boolean processed)
 	            throws PacketRejectedException;
 }

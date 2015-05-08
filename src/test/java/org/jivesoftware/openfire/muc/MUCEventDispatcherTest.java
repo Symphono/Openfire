@@ -19,7 +19,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
-import org.jivesoftware.openfire.interceptor.InterceptorManager;
 import org.jivesoftware.util.JiveGlobals;
 import org.junit.Before;
 import org.junit.Test;
@@ -70,7 +69,7 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenFirstRequiredListenerIsAddedThenACallIsMadeToPersistIt() {
-		HashSet<EMUCEventType> events = new HashSet<EMUCEventType>();
+		final HashSet<EMUCEventType> events = new HashSet<EMUCEventType>();
 		events.add(EMUCEventType.BeforeCreated);
 		events.add(EMUCEventType.BeforeJoined);
 		
@@ -78,8 +77,8 @@ public class MUCEventDispatcherTest {
 		
 		verify(persistenceUtility).persistRequiredListeners(captor.capture());
 		 
-		Map<String, Set<EMUCEventType>> listeners = captor.getValue();
-		Set<EMUCEventType> retrievedEvents = listeners.get("One");
+		final Map<String, Set<EMUCEventType>> listeners = captor.getValue();
+		final Set<EMUCEventType> retrievedEvents = listeners.get("One");
 		assertEquals(1, listeners.size());
 		
 		assertTrue(retrievedEvents.contains(EMUCEventType.BeforeCreated));
@@ -93,14 +92,14 @@ public class MUCEventDispatcherTest {
 				
 	@Test
 	public void whenAnotherRequiredListenerIsAddedThenACallIsMadeToPersistAll() {
-		HashSet<EMUCEventType> originalEvents = new HashSet<EMUCEventType>();
+		final HashSet<EMUCEventType> originalEvents = new HashSet<EMUCEventType>();
 		originalEvents.add(EMUCEventType.BeforeDestroyed);
 		originalEvents.add(EMUCEventType.BeforeSubjectChanged);
 		
-		Map<String, Set<EMUCEventType>> originalMap = new HashMap<String, Set<EMUCEventType>>();
+		final Map<String, Set<EMUCEventType>> originalMap = new HashMap<String, Set<EMUCEventType>>();
 		originalMap.put("One",  originalEvents);
 		
-		HashSet<EMUCEventType> newEvents = new HashSet<EMUCEventType>();
+		final HashSet<EMUCEventType> newEvents = new HashSet<EMUCEventType>();
 		newEvents.add(EMUCEventType.BeforeCreated);
 		newEvents.add(EMUCEventType.BeforeJoined);
 		
@@ -109,11 +108,11 @@ public class MUCEventDispatcherTest {
 		
 		verify(persistenceUtility).persistRequiredListeners(captor.capture());
 		 
-		Map<String, Set<EMUCEventType>> listeners = captor.getValue();
-		Set<EMUCEventType> originalRetrievedEvents = listeners.get("One");
+		final Map<String, Set<EMUCEventType>> listeners = captor.getValue();
+		final Set<EMUCEventType> originalRetrievedEvents = listeners.get("One");
 		assertEquals(2, listeners.size());
 		
-		Set<EMUCEventType> retrievedEvents = listeners.get("Two");
+		final Set<EMUCEventType> retrievedEvents = listeners.get("Two");
 		assertEquals(2, listeners.size());
 
 		assertTrue(originalRetrievedEvents.contains(EMUCEventType.BeforeDestroyed));
@@ -135,14 +134,14 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenAllRequiredListenersArePresentThenNoEventsAreBlocked() {
-		HashSet<EMUCEventType> originalEvents = new HashSet<EMUCEventType>();
+		final HashSet<EMUCEventType> originalEvents = new HashSet<EMUCEventType>();
 		originalEvents.add(EMUCEventType.BeforeDestroyed);
 		originalEvents.add(EMUCEventType.BeforeSubjectChanged);
 		
-		Map<String, Set<EMUCEventType>> originalMap = new HashMap<String, Set<EMUCEventType>>();
+		final Map<String, Set<EMUCEventType>> originalMap = new HashMap<String, Set<EMUCEventType>>();
 		originalMap.put("One",  originalEvents);
 		
-		HashSet<EMUCEventType> newEvents = new HashSet<EMUCEventType>();
+		final HashSet<EMUCEventType> newEvents = new HashSet<EMUCEventType>();
 		newEvents.add(EMUCEventType.BeforeCreated);
 		newEvents.add(EMUCEventType.BeforeJoined);
 		
@@ -172,14 +171,14 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenRequiredListenerIsRemovedThenItsEventsAreBeingBlocked() {
-		HashSet<EMUCEventType> originalEvents = new HashSet<EMUCEventType>();
+		final HashSet<EMUCEventType> originalEvents = new HashSet<EMUCEventType>();
 		originalEvents.add(EMUCEventType.BeforeDestroyed);
 		originalEvents.add(EMUCEventType.BeforeSubjectChanged);
 		
-		Map<String, Set<EMUCEventType>> originalMap = new HashMap<String, Set<EMUCEventType>>();
+		final Map<String, Set<EMUCEventType>> originalMap = new HashMap<String, Set<EMUCEventType>>();
 		originalMap.put("One",  originalEvents);
 		
-		HashSet<EMUCEventType> newEvents = new HashSet<EMUCEventType>();
+		final HashSet<EMUCEventType> newEvents = new HashSet<EMUCEventType>();
 		newEvents.add(EMUCEventType.BeforeCreated);
 		newEvents.add(EMUCEventType.BeforeJoined);
 		
@@ -209,14 +208,14 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenRequiredListenerIsRemovedAndMarkedAsNotRequiredThenItsEventsAreNotBlocked() {
-		HashSet<EMUCEventType> originalEvents = new HashSet<EMUCEventType>();
+		final HashSet<EMUCEventType> originalEvents = new HashSet<EMUCEventType>();
 		originalEvents.add(EMUCEventType.BeforeDestroyed);
 		originalEvents.add(EMUCEventType.BeforeSubjectChanged);
 		
-		Map<String, Set<EMUCEventType>> originalMap = new HashMap<String, Set<EMUCEventType>>();
+		final Map<String, Set<EMUCEventType>> originalMap = new HashMap<String, Set<EMUCEventType>>();
 		originalMap.put("One",  originalEvents);
 		
-		HashSet<EMUCEventType> newEvents = new HashSet<EMUCEventType>();
+		final HashSet<EMUCEventType> newEvents = new HashSet<EMUCEventType>();
 		newEvents.add(EMUCEventType.BeforeCreated);
 		newEvents.add(EMUCEventType.BeforeJoined);
 		
@@ -246,13 +245,13 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenBeforeMessageReceivedIsCalledAndRequiredListenersArePresentThenAllListenersAreCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
-		boolean returned = MUCEventDispatcher.beforeMessageReceived(new JID("1"), new JID("2"), "nickname", new Message());
+		final boolean returned = MUCEventDispatcher.beforeMessageReceived(new JID("1"), new JID("2"), "nickname", new Message());
 		assertFalse(returned);
 		verify(mucEventListener).beforeMessageReceived(any(JID.class), any(JID.class), anyString(), any(Message.class));
 		verify(mucEventListener2).beforeMessageReceived(any(JID.class), any(JID.class), anyString(), any(Message.class));
@@ -261,14 +260,14 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenBeforeMessageReceivedIsCalledAndOneListenerReturnsTrueTehnRemainingListenersAreNotCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
 		when(mucEventListener.beforeMessageReceived(any(JID.class), any(JID.class), anyString(), any(Message.class))).thenReturn(true);
-		boolean returned = MUCEventDispatcher.beforeMessageReceived(new JID("1"), new JID("2"), "nickname", new Message());
+		final boolean returned = MUCEventDispatcher.beforeMessageReceived(new JID("1"), new JID("2"), "nickname", new Message());
 		assertTrue(returned);
 		verify(mucEventListener).beforeMessageReceived(any(JID.class), any(JID.class), anyString(), any(Message.class));
 		verify(mucEventListener2, never()).beforeMessageReceived(any(JID.class), any(JID.class), anyString(), any(Message.class));
@@ -278,16 +277,16 @@ public class MUCEventDispatcherTest {
 	@Test
 	public void whenBeforeMessageReceivedIsCalledAndRequiredListenersAreNotPresentThenCallsAreBlocked() throws MUCEventRejectedException {
 		//Three is a required listener that's not present
-		Map<String, Set<EMUCEventType>> originalMap = createEventMap("Three",  EMUCEventType.BeforeMessageReceived);
+		final Map<String, Set<EMUCEventType>> originalMap = createEventMap("Three",  EMUCEventType.BeforeMessageReceived);
 		Whitebox.setInternalState(MUCEventDispatcher.class, "allRequiredListeners", originalMap);
 		
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
-		boolean returned = MUCEventDispatcher.beforeMessageReceived(new JID("1"), new JID("2"), "nickname", new Message());
+		final boolean returned = MUCEventDispatcher.beforeMessageReceived(new JID("1"), new JID("2"), "nickname", new Message());
 		assertFalse(returned);
 		verify(mucEventListener, never()).beforeMessageReceived(any(JID.class), any(JID.class), anyString(), any(Message.class));
 		verify(mucEventListener2, never()).beforeMessageReceived(any(JID.class), any(JID.class), anyString(), any(Message.class));
@@ -296,8 +295,8 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenMessageReceivedIsCalledAndRequiredListenersArePresentThenAllListenersAreCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
@@ -311,13 +310,13 @@ public class MUCEventDispatcherTest {
 		
 	@Test
 	public void whenBeforeNicknameChangedIsCalledAndRequiredListenersArePresentThenAllListenersAreCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
-		boolean returned = MUCEventDispatcher.beforeNicknameChanged(new JID("1"), new JID("2"), "nickname", "newNickname");
+		final boolean returned = MUCEventDispatcher.beforeNicknameChanged(new JID("1"), new JID("2"), "nickname", "newNickname");
 		assertFalse(returned);
 		verify(mucEventListener).beforeNicknameChanged(any(JID.class), any(JID.class), anyString(), anyString());
 		verify(mucEventListener2).beforeNicknameChanged(any(JID.class), any(JID.class), anyString(), anyString());
@@ -326,14 +325,14 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenBeforeNicknameChangedIsCalledAndOneListenerReturnsTrueThenRemainingListenersAreNotCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
 		when(mucEventListener.beforeNicknameChanged(any(JID.class), any(JID.class), anyString(), anyString())).thenReturn(true);
-		boolean returned = MUCEventDispatcher.beforeNicknameChanged(new JID("1"), new JID("2"), "nickname", "newNickname");
+		final boolean returned = MUCEventDispatcher.beforeNicknameChanged(new JID("1"), new JID("2"), "nickname", "newNickname");
 		assertTrue(returned);
 		verify(mucEventListener).beforeNicknameChanged(any(JID.class), any(JID.class), anyString(), anyString());
 		verify(mucEventListener2, never()).beforeNicknameChanged(any(JID.class), any(JID.class), anyString(), anyString());
@@ -343,16 +342,16 @@ public class MUCEventDispatcherTest {
 	@Test
 	public void whenBeforeNicknameChangedIsCalledAndRequiredListenersAreNotPresentThenCallsAreBlocked() throws MUCEventRejectedException {
 		//Three is a required listener that's not present
-		Map<String, Set<EMUCEventType>> originalMap = createEventMap("Three",  EMUCEventType.BeforeNickChanged);
+		final Map<String, Set<EMUCEventType>> originalMap = createEventMap("Three",  EMUCEventType.BeforeNickChanged);
 		Whitebox.setInternalState(MUCEventDispatcher.class, "allRequiredListeners", originalMap);
 		
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
-		boolean returned = MUCEventDispatcher.beforeNicknameChanged(new JID("1"), new JID("2"), "nickname", "newNickname");
+		final boolean returned = MUCEventDispatcher.beforeNicknameChanged(new JID("1"), new JID("2"), "nickname", "newNickname");
 		assertFalse(returned);
 		verify(mucEventListener, never()).beforeNicknameChanged(any(JID.class), any(JID.class), anyString(), anyString());
 		verify(mucEventListener2, never()).beforeNicknameChanged(any(JID.class), any(JID.class), anyString(), anyString());
@@ -361,8 +360,8 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenNicknameChangedIsCalledAndRequiredListenersArePresentThenAllListenersAreCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
@@ -376,13 +375,13 @@ public class MUCEventDispatcherTest {
 
 	@Test
 	public void whenBeforeOccupantJoinedIsCalledAndRequiredListenersArePresentThenAllListenersAreCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
-		boolean returned = MUCEventDispatcher.beforeOccupantJoined(new JID("1"), new JID("2"), "nickname");
+		final boolean returned = MUCEventDispatcher.beforeOccupantJoined(new JID("1"), new JID("2"), "nickname");
 		assertFalse(returned);
 		verify(mucEventListener).beforeOccupantJoined(any(JID.class), any(JID.class), anyString());
 		verify(mucEventListener2).beforeOccupantJoined(any(JID.class), any(JID.class), anyString());
@@ -391,14 +390,14 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenBeforeOccupantJoinedIsCalledAndOneListenerReturnsTrueThenRemainingListenersAreNotCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
 		when(mucEventListener.beforeOccupantJoined(any(JID.class), any(JID.class), anyString())).thenReturn(true);
-		boolean returned = MUCEventDispatcher.beforeOccupantJoined(new JID("1"), new JID("2"), "nickname");
+		final boolean returned = MUCEventDispatcher.beforeOccupantJoined(new JID("1"), new JID("2"), "nickname");
 		assertTrue(returned);
 		verify(mucEventListener).beforeOccupantJoined(any(JID.class), any(JID.class), anyString());
 		verify(mucEventListener2, never()).beforeOccupantJoined(any(JID.class), any(JID.class), anyString());
@@ -408,16 +407,16 @@ public class MUCEventDispatcherTest {
 	@Test
 	public void whenBeforeOccupantJoinedIsCalledAndRequiredListenersAreNotPresentThenCallsAreBlocked() throws MUCEventRejectedException {
 		//Three is a required listener that's not present
-		Map<String, Set<EMUCEventType>> originalMap = createEventMap("Three",  EMUCEventType.BeforeJoined);
+		final Map<String, Set<EMUCEventType>> originalMap = createEventMap("Three",  EMUCEventType.BeforeJoined);
 		Whitebox.setInternalState(MUCEventDispatcher.class, "allRequiredListeners", originalMap);
 		
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
-		boolean returned = MUCEventDispatcher.beforeOccupantJoined(new JID("1"), new JID("2"), "nickname");
+		final boolean returned = MUCEventDispatcher.beforeOccupantJoined(new JID("1"), new JID("2"), "nickname");
 		assertFalse(returned);
 		verify(mucEventListener, never()).beforeOccupantJoined(any(JID.class), any(JID.class), anyString());
 		verify(mucEventListener2, never()).beforeOccupantJoined(any(JID.class), any(JID.class), anyString());
@@ -426,8 +425,8 @@ public class MUCEventDispatcherTest {
 
 	@Test
 	public void whenOccupantJoinedIsCalledAndRequiredListenersArePresentThenAllListenersAreCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
@@ -441,8 +440,8 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenOccupantLeftIsCalledAndRequiredListenersArePresentThenAllListenersAreCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
@@ -456,13 +455,13 @@ public class MUCEventDispatcherTest {
 
 	@Test
 	public void whenBeforePrivateMessageRecievedIsCalledAndRequiredListenersArePresentThenAllListenersAreCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
-		boolean returned = MUCEventDispatcher.beforePrivateMessageRecieved(new JID("1"), new JID("2"), new Message());
+		final boolean returned = MUCEventDispatcher.beforePrivateMessageRecieved(new JID("1"), new JID("2"), new Message());
 		assertFalse(returned);
 		verify(mucEventListener).beforePrivateMessageRecieved(any(JID.class), any(JID.class), any(Message.class));
 		verify(mucEventListener2).beforePrivateMessageRecieved(any(JID.class), any(JID.class), any(Message.class));
@@ -471,14 +470,14 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenBeforePrivateMessageRecievedIsCalledAndOneListenerReturnsTrueThenRemainingListenersAreNotCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
 		when(mucEventListener.beforePrivateMessageRecieved(any(JID.class), any(JID.class), any(Message.class))).thenReturn(true);
-		boolean returned = MUCEventDispatcher.beforePrivateMessageRecieved(new JID("1"), new JID("2"), new Message());
+		final boolean returned = MUCEventDispatcher.beforePrivateMessageRecieved(new JID("1"), new JID("2"), new Message());
 		assertTrue(returned);
 		verify(mucEventListener).beforePrivateMessageRecieved(any(JID.class), any(JID.class), any(Message.class));
 		verify(mucEventListener2, never()).beforePrivateMessageRecieved(any(JID.class), any(JID.class), any(Message.class));
@@ -488,16 +487,16 @@ public class MUCEventDispatcherTest {
 	@Test
 	public void whenBeforePrivateMessageRecievedIsCalledAndRequiredListenersAreNotPresentThenCallsAreBlocked() throws MUCEventRejectedException {
 		//Three is a required listener that's not present
-		Map<String, Set<EMUCEventType>> originalMap = createEventMap("Three",  EMUCEventType.BeforePrivateMessageReceived);
+		final Map<String, Set<EMUCEventType>> originalMap = createEventMap("Three",  EMUCEventType.BeforePrivateMessageReceived);
 		Whitebox.setInternalState(MUCEventDispatcher.class, "allRequiredListeners", originalMap);
 		
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
-		boolean returned = MUCEventDispatcher.beforePrivateMessageRecieved(new JID("1"), new JID("2"), new Message());
+		final boolean returned = MUCEventDispatcher.beforePrivateMessageRecieved(new JID("1"), new JID("2"), new Message());
 		assertFalse(returned);
 		verify(mucEventListener, never()).beforePrivateMessageRecieved(any(JID.class), any(JID.class), any(Message.class));
 		verify(mucEventListener2, never()).beforePrivateMessageRecieved(any(JID.class), any(JID.class), any(Message.class));
@@ -506,8 +505,8 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenPrivateMessageRecievedIsCalledAndRequiredListenersArePresentThenAllListenersAreCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
@@ -521,13 +520,13 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenBeforeRoomCreatedIsCalledAndRequiredListenersArePresentThenAllListenersAreCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
-		boolean returned = MUCEventDispatcher.beforeRoomCreated(new JID("1"), new JID("2"));
+		final boolean returned = MUCEventDispatcher.beforeRoomCreated(new JID("1"), new JID("2"));
 		assertFalse(returned);
 		verify(mucEventListener).beforeRoomCreated(any(JID.class), any(JID.class));
 		verify(mucEventListener2).beforeRoomCreated(any(JID.class), any(JID.class));
@@ -536,14 +535,14 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenBeforeRoomCreatedIsCalledAndOneListenerReturnsTrueThenRemainingListenersAreNotCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
 		when(mucEventListener.beforeRoomCreated(any(JID.class), any(JID.class))).thenReturn(true);
-		boolean returned = MUCEventDispatcher.beforeRoomCreated(new JID("1"), new JID("2"));
+		final boolean returned = MUCEventDispatcher.beforeRoomCreated(new JID("1"), new JID("2"));
 		assertTrue(returned);
 		verify(mucEventListener).beforeRoomCreated(any(JID.class), any(JID.class));
 		verify(mucEventListener2, never()).beforeRoomCreated(any(JID.class), any(JID.class));
@@ -553,16 +552,16 @@ public class MUCEventDispatcherTest {
 	@Test
 	public void whenBeforeRoomCreatedIsCalledAndRequiredListenersAreNotPresentThenCallsAreBlocked() throws MUCEventRejectedException {
 		//Three is a required listener that's not present
-		Map<String, Set<EMUCEventType>> originalMap = createEventMap("Three",  EMUCEventType.BeforeCreated);
+		final Map<String, Set<EMUCEventType>> originalMap = createEventMap("Three",  EMUCEventType.BeforeCreated);
 		Whitebox.setInternalState(MUCEventDispatcher.class, "allRequiredListeners", originalMap);
 		
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
-		boolean returned = MUCEventDispatcher.beforeRoomCreated(new JID("1"), new JID("2"));
+		final boolean returned = MUCEventDispatcher.beforeRoomCreated(new JID("1"), new JID("2"));
 		assertFalse(returned);
 		verify(mucEventListener, never()).beforeRoomCreated(any(JID.class), any(JID.class));
 		verify(mucEventListener2, never()).beforeRoomCreated(any(JID.class), any(JID.class));
@@ -571,8 +570,8 @@ public class MUCEventDispatcherTest {
 
 	@Test
 	public void whenRoomCreatedIsCalledAndRequiredListenersArePresentThenAllListenersAreCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
@@ -586,13 +585,13 @@ public class MUCEventDispatcherTest {
 
 	@Test
 	public void whenBeforeRoomDestroyedIsCalledAndRequiredListenersArePresentThenAllListenersAreCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
-		boolean returned = MUCEventDispatcher.beforeRoomDestroyed(new JID("1"));
+		final boolean returned = MUCEventDispatcher.beforeRoomDestroyed(new JID("1"));
 		assertFalse(returned);
 		verify(mucEventListener).beforeRoomDestroyed(any(JID.class));
 		verify(mucEventListener2).beforeRoomDestroyed(any(JID.class));
@@ -601,14 +600,14 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenBeforeRoomDestroyedIsCalledAndOneListenerReturnsTrueThenRemainingListenersAreNotCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
 		when(mucEventListener.beforeRoomDestroyed(any(JID.class))).thenReturn(true);
-		boolean returned = MUCEventDispatcher.beforeRoomDestroyed(new JID("1"));
+		final boolean returned = MUCEventDispatcher.beforeRoomDestroyed(new JID("1"));
 		assertTrue(returned);
 		verify(mucEventListener).beforeRoomDestroyed(any(JID.class));
 		verify(mucEventListener2, never()).beforeRoomDestroyed(any(JID.class));
@@ -618,16 +617,16 @@ public class MUCEventDispatcherTest {
 	@Test
 	public void whenBeforeRoomDestroyedIsCalledAndRequiredListenersAreNotPresentThenCallsAreBlocked() throws MUCEventRejectedException {
 		//Three is a required listener that's not present
-		Map<String, Set<EMUCEventType>> originalMap = createEventMap("Three",  EMUCEventType.BeforeDestroyed);
+		final Map<String, Set<EMUCEventType>> originalMap = createEventMap("Three",  EMUCEventType.BeforeDestroyed);
 		Whitebox.setInternalState(MUCEventDispatcher.class, "allRequiredListeners", originalMap);
 		
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
-		boolean returned = MUCEventDispatcher.beforeRoomDestroyed(new JID("1"));
+		final boolean returned = MUCEventDispatcher.beforeRoomDestroyed(new JID("1"));
 		assertFalse(returned);
 		verify(mucEventListener, never()).beforeRoomDestroyed(any(JID.class));
 		verify(mucEventListener2, never()).beforeRoomDestroyed(any(JID.class));
@@ -636,8 +635,8 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenRoomDestroyedIsCalledAndRequiredListenersArePresentThenAllListenersAreCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
@@ -651,13 +650,13 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenBeforeRoomSubjectChangedIsCalledAndRequiredListenersArePresentThenAllListenersAreCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
-		boolean returned = MUCEventDispatcher.beforeRoomSubjectChanged(new JID("1"), new JID("2"), "newSubject");
+		final boolean returned = MUCEventDispatcher.beforeRoomSubjectChanged(new JID("1"), new JID("2"), "newSubject");
 		assertFalse(returned);
 		verify(mucEventListener).beforeRoomSubjectChanged(any(JID.class), any(JID.class), anyString());
 		verify(mucEventListener2).beforeRoomSubjectChanged(any(JID.class), any(JID.class), anyString());
@@ -666,14 +665,14 @@ public class MUCEventDispatcherTest {
 	
 	@Test
 	public void whenBeforeRoomSubjectChangedIsCalledAndOneListenerReturnsTrueThenRemainingListenersAreNotCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
 		when(mucEventListener.beforeRoomSubjectChanged(any(JID.class), any(JID.class), anyString())).thenReturn(true);
-		boolean returned = MUCEventDispatcher.beforeRoomSubjectChanged(new JID("1"), new JID("2"), "newSubject");
+		final boolean returned = MUCEventDispatcher.beforeRoomSubjectChanged(new JID("1"), new JID("2"), "newSubject");
 		assertTrue(returned);
 		verify(mucEventListener).beforeRoomSubjectChanged(any(JID.class), any(JID.class), anyString());
 		verify(mucEventListener2, never()).beforeRoomSubjectChanged(any(JID.class), any(JID.class), anyString());
@@ -683,16 +682,16 @@ public class MUCEventDispatcherTest {
 	@Test
 	public void whenBeforeRoomSubjectChangedIsCalledAndRequiredListenersAreNotPresentThenCallsAreBlocked() throws MUCEventRejectedException {
 		//Three is a required listener that's not present
-		Map<String, Set<EMUCEventType>> originalMap = createEventMap("Three",  EMUCEventType.BeforeSubjectChanged);
+		final Map<String, Set<EMUCEventType>> originalMap = createEventMap("Three",  EMUCEventType.BeforeSubjectChanged);
 		Whitebox.setInternalState(MUCEventDispatcher.class, "allRequiredListeners", originalMap);
 		
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
 		
-		boolean returned = MUCEventDispatcher.beforeRoomSubjectChanged(new JID("1"), new JID("2"), "newSubject");
+		final boolean returned = MUCEventDispatcher.beforeRoomSubjectChanged(new JID("1"), new JID("2"), "newSubject");
 		assertFalse(returned);
 		verify(mucEventListener, never()).beforeRoomSubjectChanged(any(JID.class), any(JID.class), anyString());
 		verify(mucEventListener2, never()).beforeRoomSubjectChanged(any(JID.class), any(JID.class), anyString());
@@ -701,8 +700,8 @@ public class MUCEventDispatcherTest {
 
 	@Test
 	public void whenRoomSubjectChangedIsCalledAndRequiredListenersArePresentThenAllListenersAreCalled() throws MUCEventRejectedException {
-		Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
-		Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
+		final Set<EMUCEventType> set1 = createEventSet(EMUCEventType.BeforeDestroyed);
+		final Set<EMUCEventType> set2 = createEventSet(EMUCEventType.BeforeCreated);
 
 		MUCEventDispatcher.addRequiredListener(mucEventListener, "One", set1);
 		MUCEventDispatcher.addRequiredListener(mucEventListener2, "Two", set2);
@@ -714,19 +713,19 @@ public class MUCEventDispatcherTest {
 	}
 	
 
-	private Set<EMUCEventType> createEventSet(EMUCEventType... events) {
-		HashSet<EMUCEventType> eventSet = new HashSet<EMUCEventType>();
+	private Set<EMUCEventType> createEventSet(final EMUCEventType... events) {
+		final HashSet<EMUCEventType> eventSet = new HashSet<EMUCEventType>();
 		Collections.addAll(eventSet, events);
 		
 		return eventSet;
 	}
 	
 	
-	private Map<String, Set<EMUCEventType>> createEventMap(String listenerName, EMUCEventType... events) {
-		HashSet<EMUCEventType> eventSet = new HashSet<EMUCEventType>();
+	private Map<String, Set<EMUCEventType>> createEventMap(final String listenerName, final EMUCEventType... events) {
+		final HashSet<EMUCEventType> eventSet = new HashSet<EMUCEventType>();
 		Collections.addAll(eventSet, events);
 		
-		Map<String, Set<EMUCEventType>> listenerMap = new HashMap<String, Set<EMUCEventType>>();
+		final Map<String, Set<EMUCEventType>> listenerMap = new HashMap<String, Set<EMUCEventType>>();
 		listenerMap.put(listenerName,  eventSet);
 		
 		return listenerMap;

@@ -49,7 +49,7 @@ public class InterceptorManagerTest {
 	@Mock
 	WriteLock writeLock;
 	
-	
+	 
 	@Before
 	public void setUp() {
 		MockitoAnnotations.initMocks(this);
@@ -59,7 +59,7 @@ public class InterceptorManagerTest {
 	
 	@Test
 	public void whenManagerStartsThenInterceptorPropertiesAreLoaded() throws Exception {		
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
 				 new String[] {"All", "Incoming", "Outgoing", "Processed", "Unprocessed"},
 				 new String[]{"Message", "IQ", "Presence", "Roster"} );
 			  
@@ -69,11 +69,11 @@ public class InterceptorManagerTest {
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
 		manager.addRequiredInterceptor(interceptor, "Two", new HashSet<EPacketType>(), new HashSet<EEventType>());
 		
-		Collection<PacketInterceptor2> interceptors = manager.getRequiredInterceptors();
+		final Collection<PacketInterceptor2> interceptors = manager.getRequiredInterceptors();
 
 		assertEquals(1, interceptors.size());
 	}
@@ -81,7 +81,7 @@ public class InterceptorManagerTest {
 	
 	@Test
 	public void whenRequiredInterceptorIsRemovedPermanentlyThenPersistenceUtilityIsCalledTheSecondTime() throws Exception {		
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
 				 new String[] {"All", "Incoming", "Outgoing", "Processed", "Unprocessed"},
 				 new String[]{"Message", "IQ", "Presence", "Roster"} );
 			  
@@ -91,7 +91,7 @@ public class InterceptorManagerTest {
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
 		manager.addRequiredInterceptor(interceptor, "Two", new HashSet<EPacketType>(), new HashSet<EEventType>());
 		
@@ -104,7 +104,7 @@ public class InterceptorManagerTest {
 	
 	@Test
 	public void whenRequiredInterceptorIsNOTRemovedPermanentlyThenPersistenceUtilityIsCalledOnlyOnce() throws Exception {		
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
 				 new String[] {"All", "Incoming", "Outgoing", "Processed", "Unprocessed"},
 				 new String[]{"Message", "IQ", "Presence", "Roster"} );
 			  
@@ -114,7 +114,7 @@ public class InterceptorManagerTest {
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
 		manager.addRequiredInterceptor(interceptor, "Two", new HashSet<EPacketType>(), new HashSet<EEventType>());
 		
@@ -127,11 +127,11 @@ public class InterceptorManagerTest {
 	
 	@Test
 	public void whenRequiredInterceptorsAreRegisteredThenNoPacketsAreBlocked() throws Exception {		
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
 				 new String[] { "Incoming", "Outgoing", "Processed"},
 				 new String[]{"Message", "IQ", "Presence", "Roster"} );
 		
-		Map<String, RequiredInterceptorDefinition> definitionMap2 = createDefinitions("Two", 
+		final Map<String, RequiredInterceptorDefinition> definitionMap2 = createDefinitions("Two", 
 				 new String[] {},
 				 new String[]{} );
 		
@@ -142,7 +142,7 @@ public class InterceptorManagerTest {
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
 		manager.addRequiredInterceptor(interceptor, "One", new HashSet<EPacketType>(), new HashSet<EEventType>());
 		manager.addRequiredInterceptor(interceptor, "Two", new HashSet<EPacketType>(), new HashSet<EEventType>());
@@ -156,11 +156,11 @@ public class InterceptorManagerTest {
 	
 	@Test
 	public void whenNotAllRequiredInterceptorsAreRegisteredThenPacketsAreBlocked() throws Exception {		
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
 				 new String[] { "Incoming", "Outgoing", "Processed"},
 				 new String[]{"Message", "IQ", "Presence", "Roster"} );
 		
-		Map<String, RequiredInterceptorDefinition> definitionMap2 = createDefinitions("Two", 
+		final Map<String, RequiredInterceptorDefinition> definitionMap2 = createDefinitions("Two", 
 				 new String[] {},
 				 new String[]{} );
 		
@@ -171,39 +171,39 @@ public class InterceptorManagerTest {
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
 		manager.addRequiredInterceptor(interceptor, "Two", new HashSet<EPacketType>(), new HashSet<EEventType>());
 		
 		try {
 			manager.invokeInterceptors(new Message(), this.mockClientSession, true, true);
 			fail("Expected to be rejected");
-		} catch(PacketRejectedException pre) {}
+		} catch(final PacketRejectedException pre) {}
 		
 		try {
 			manager.invokeInterceptors(new IQ(), this.mockClientSession, true, false);
 			fail("Expected to be rejected");
-		} catch(PacketRejectedException pre) {}
+		} catch(final PacketRejectedException pre) {}
 		
 		try {
 			manager.invokeInterceptors(new Presence(), this.mockClientSession, false, true);
 			fail("Expected to be rejected");
-		} catch(PacketRejectedException pre) {}
+		} catch(final PacketRejectedException pre) {}
 		
 		try {
 			manager.invokeInterceptors(new Roster(), this.mockClientSession, false, false);
 			fail("Expected to be rejected");
-		}catch(PacketRejectedException pre) {}			
+		}catch(final PacketRejectedException pre) {}			
 	}	
 	
 
 	@Test
 	public void whenInterceptorsAreRegisteredThenBlockingSetsArePopulatedCorrectyly() throws Exception {		
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
 				 new String[] { "Incoming", "Outgoing", "Processed"},
 				 new String[]{"Message", "IQ", "Presence", "Roster"} );
 		
-		Map<String, RequiredInterceptorDefinition> definitionMap2 = createDefinitions("Two", 
+		final Map<String, RequiredInterceptorDefinition> definitionMap2 = createDefinitions("Two", 
 				 new String[] {},
 				 new String[]{} );
 		
@@ -214,7 +214,7 @@ public class InterceptorManagerTest {
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		 
 		assertTrue(manager.getEventTypesToBlock().contains(EEventType.Incoming));
 		assertTrue(manager.getEventTypesToBlock().contains(EEventType.Outgoing));
@@ -229,11 +229,11 @@ public class InterceptorManagerTest {
 	
 	@Test
 	public void whenBothInterceptorsAreRegisteredThenBlockingSetsArePopulatedCorrectyly() throws Exception {		
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
 				 new String[] { "Incoming", "Outgoing", "Processed"},
 				 new String[]{"Message", "IQ", "Roster"} );
 		
-		Map<String, RequiredInterceptorDefinition> definitionMap2 = createDefinitions("Two", 
+		final Map<String, RequiredInterceptorDefinition> definitionMap2 = createDefinitions("Two", 
 				 new String[] {"Outgoing", "Processed", "Unprocessed"},
 				 new String[]{"Message", "Presence", "IQ"} );
 		
@@ -244,7 +244,7 @@ public class InterceptorManagerTest {
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		 
 		assertTrue(manager.getEventTypesToBlock().contains(EEventType.Incoming));
 		assertTrue(manager.getEventTypesToBlock().contains(EEventType.Outgoing));
@@ -260,11 +260,11 @@ public class InterceptorManagerTest {
 	
 	@Test
 	public void whenOneOfTheInterceptorsContainsAllThenBlockingSetsArePopulatedCorrectyly() throws Exception {
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", 
 				 new String[] { "Incoming", "Outgoing", "Processed"},
 				 new String[]{"Message", "IQ", "Roster"} );
 		
-		Map<String, RequiredInterceptorDefinition> definitionMap2 = createDefinitions("Two", 
+		final Map<String, RequiredInterceptorDefinition> definitionMap2 = createDefinitions("Two", 
 				 new String[] {"All", "Processed", "Unprocessed"},
 				 new String[]{"All", "Presence", "IQ"} );
 		
@@ -275,7 +275,7 @@ public class InterceptorManagerTest {
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		 
 		assertEquals(1, manager.getEventTypesToBlock().size());
 		assertEquals(1, manager.getPacketTypesToBlock().size());
@@ -287,39 +287,39 @@ public class InterceptorManagerTest {
 	
 	@Test
 	public void whenConfiguredToBlockAllPacketsAndAllEventsThenAllPacketsAreRejected() throws Exception {		
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"All"}, new String[]{"All"} );
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"All"}, new String[]{"All"} );
 		
 		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
 		try {
 			manager.invokeInterceptors(new IQ(), this.mockClientSession, true, false);
 			fail("Expected to be rejected");
-		} catch(PacketRejectedException pre) {}
+		} catch(final PacketRejectedException pre) {}
 		
 		try {
 			manager.invokeInterceptors(new Presence(), this.mockClientSession, false, true);
 			fail("Expected to be rejected");
-		} catch(PacketRejectedException pre) {}
+		} catch(final PacketRejectedException pre) {}
 		
 		try {
 			manager.invokeInterceptors(new Roster(), this.mockClientSession, false, false);
 			fail("Expected to be rejected");
-		} catch(PacketRejectedException pre) {}			
+		} catch(final PacketRejectedException pre) {}			
 	}
 
 
 	@Test
 	public void whenNotConfiguredToBlockAnythingThenNoPacketsAreRejected() throws Exception {		
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {}, new String[]{} );		 		 
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {}, new String[]{} );		 		 
 		
 		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 				 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		 	
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);		
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);		
 		 
 		manager.invokeInterceptors(new Message(), this.mockClientSession, true, true);
 		manager.invokeInterceptors(new IQ(), this.mockClientSession, true, false);
@@ -330,23 +330,23 @@ public class InterceptorManagerTest {
 	
 	@Test
 	public void whenIncomingPacketsArriveThenTheyWillBeRejected() throws Exception {
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"Incoming"}, new String[]{} );
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"Incoming"}, new String[]{} );
 		  		 
 		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		 	
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
 		try {
 			manager.invokeInterceptors(new Message(), this.mockClientSession, true, true);
 			fail("Expected to be rejected");
-		 }catch(PacketRejectedException pre) {}
+		 }catch(final PacketRejectedException pre) {}
 		 
 		try {
 			manager.invokeInterceptors(new IQ(), this.mockClientSession, true, false);
 			fail("Expected to be rejected");
-		}catch(PacketRejectedException pre) {}
+		}catch(final PacketRejectedException pre) {}
 		
 		 manager.invokeInterceptors(new Presence(), this.mockClientSession, false, true);
 		 manager.invokeInterceptors(new Roster(), this.mockClientSession, false, false);
@@ -355,50 +355,50 @@ public class InterceptorManagerTest {
 
 	@Test
 	public void whenIncomingAndOutgoinPacketsArriveThenTheyWillBeRejected() throws Exception {
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"Incoming", "Outgoing"}, new String[]{} );
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"Incoming", "Outgoing"}, new String[]{} );
 		  		 
 		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		 	
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 
 		try {
 			manager.invokeInterceptors(new Message(), this.mockClientSession, true, true);
 			fail("Expected to be rejected");
-		} catch(PacketRejectedException pre) {}
+		} catch(final PacketRejectedException pre) {}
 		
 		try {
 			manager.invokeInterceptors(new IQ(), this.mockClientSession, true, false);
 			fail("Expected to be rejected");
-		} catch(PacketRejectedException pre) {}
+		} catch(final PacketRejectedException pre) {}
 		
 		try {
 			manager.invokeInterceptors(new Presence(), this.mockClientSession, false, true);
 			fail("Expected to be rejected");
-		} catch(PacketRejectedException pre) {}
+		} catch(final PacketRejectedException pre) {}
 		
 		try {
 			manager.invokeInterceptors(new Roster(), this.mockClientSession, false, false);
 			fail("Expected to be rejected");
-		} catch(PacketRejectedException pre) {}			
+		} catch(final PacketRejectedException pre) {}			
 	}
 	
 
 	@Test
 	public void whenMessagesAreBlockedThenMessagePacketsWillBeRejected() throws Exception {
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {}, new String[]{"Message"} );
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {}, new String[]{"Message"} );
 		  		 
 		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		 	
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
 		try {
 			manager.invokeInterceptors(new Message(), this.mockClientSession, true, true);
 			fail("Expected to be rejected");
-		}catch(PacketRejectedException pre) {}
+		}catch(final PacketRejectedException pre) {}
 		
 		manager.invokeInterceptors(new IQ(), this.mockClientSession, true, false);
 		manager.invokeInterceptors(new Presence(), this.mockClientSession, false, true);
@@ -408,23 +408,23 @@ public class InterceptorManagerTest {
 
 	@Test
 	public void whenMessagesAndIQsAreBlockedThenPacketsWillBeRejected() throws Exception {
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {}, new String[]{"Message", "IQ"} );
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {}, new String[]{"Message", "IQ"} );
 		  		 
 		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		 	
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
 		try {
 			manager.invokeInterceptors(new Message(), this.mockClientSession, true, true);
 			fail("Expected to be rejected (Message)");
-		}catch(PacketRejectedException pre) {}
+		}catch(final PacketRejectedException pre) {}
 		
 		try {
 			manager.invokeInterceptors(new IQ(), this.mockClientSession, true, false);
 			fail("Expected to be rejected (IQ)");
-		}catch(PacketRejectedException pre) {}
+		}catch(final PacketRejectedException pre) {}
 		
 		manager.invokeInterceptors(new Presence(), this.mockClientSession, false, true);
 		manager.invokeInterceptors(new Roster(), this.mockClientSession, false, false);
@@ -433,19 +433,19 @@ public class InterceptorManagerTest {
 
 	@Test
 	public void whenIncomingMessagesAreBlockedThenPacketsWillBeRejected() throws Exception {
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"Incoming"}, new String[]{"Message"} );
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"Incoming"}, new String[]{"Message"} );
 		  		 
 		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		 	
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
 		manager.invokeInterceptors(new Message(), this.mockClientSession, false, true);//outgoing
 		try {			
 			manager.invokeInterceptors(new Message(), this.mockClientSession, true, true);//incoming
 			fail("Expected to be rejected (Message)");
-		}catch(PacketRejectedException pre) {}
+		}catch(final PacketRejectedException pre) {}
 
 		manager.invokeInterceptors(new IQ(), this.mockClientSession, true, false);//incoming		
  		manager.invokeInterceptors(new Presence(), this.mockClientSession, false, true);//outgoing
@@ -455,23 +455,23 @@ public class InterceptorManagerTest {
 
 	@Test
 	public void whenIncomingAndOutgoingMessagesAreBlockedThenPacketsWillBeRejected() throws Exception {
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"Incoming", "Outgoing"}, new String[]{"Message"} );
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"Incoming", "Outgoing"}, new String[]{"Message"} );
 		  		 
 		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		 	
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
 		try {
 			manager.invokeInterceptors(new Message(), this.mockClientSession, false, true);//outgoing
 			fail("Expected to be rejected (Outgoing Message)");
-		}catch(PacketRejectedException pre) {}
+		}catch(final PacketRejectedException pre) {}
 		
 		try {			
 			manager.invokeInterceptors(new Message(), this.mockClientSession, true, true);//incoming
 			fail("Expected to be rejected (Incoming Message)");
-		}catch(PacketRejectedException pre) {}
+		}catch(final PacketRejectedException pre) {}
 
 		manager.invokeInterceptors(new IQ(), this.mockClientSession, true, false);//incoming		
  		manager.invokeInterceptors(new Presence(), this.mockClientSession, false, true);//outgoing
@@ -481,59 +481,59 @@ public class InterceptorManagerTest {
 
 	@Test
 	public void whenIncomingAndOutgoingMessagesAndIQsAreBlockedThenPacketsWillBeRejected() throws Exception {
-		Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"Incoming", "Outgoing"}, new String[]{"Message", "IQ"} );
+		final Map<String, RequiredInterceptorDefinition> definitionMap = createDefinitions("One", new String[] {"Incoming", "Outgoing"}, new String[]{"Message", "IQ"} );
 		  		 
 		doReturn(definitionMap).when(mockPersistenceUtility).loadRequiredInterceptors();
 		 
 		PowerMockito.whenNew(InterceptorPersistenceUtility.class).withAnyArguments().thenReturn(mockPersistenceUtility);
 		 	
-		InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
+		final InterceptorManager manager = Whitebox.invokeConstructor(InterceptorManager.class);
 		
 		try {
 			manager.invokeInterceptors(new Message(), this.mockClientSession, false, true);//outgoing
 			fail("Expected to be rejected (Outgoing Message)");
-		}catch(PacketRejectedException pre) {}
+		}catch(final PacketRejectedException pre) {}
 		
 		try {			
 			manager.invokeInterceptors(new Message(), this.mockClientSession, true, true);//incoming
 			fail("Expected to be rejected (Incoming Message)");
-		}catch(PacketRejectedException pre) {}
+		}catch(final PacketRejectedException pre) {}
 
 		try {
 		manager.invokeInterceptors(new IQ(), this.mockClientSession, true, false);//incoming
 			fail("Expected to be rejected (Incoming IQ)");
-		}catch(PacketRejectedException pre) {}
+		}catch(final PacketRejectedException pre) {}
 		
 		try {
 		manager.invokeInterceptors(new IQ(), this.mockClientSession, false, false);//outgoing
 			fail("Expected to be rejected (Outgoing IQ)");
-		}catch(PacketRejectedException pre) {}
+		}catch(final PacketRejectedException pre) {}
 		
  		manager.invokeInterceptors(new Presence(), this.mockClientSession, false, true);//outgoing
 		manager.invokeInterceptors(new Roster(), this.mockClientSession, false, false);//outgoing
 	}
 
 
-	private Map<String, RequiredInterceptorDefinition> createDefinitions(String name, String[] eventTypes, String[] packetTypes) {
-		 Map<String, RequiredInterceptorDefinition> definitionMap = new HashMap<String, RequiredInterceptorDefinition>();
+	private Map<String, RequiredInterceptorDefinition> createDefinitions(final String name, final String[] eventTypes, final String[] packetTypes) {
+		 final Map<String, RequiredInterceptorDefinition> definitionMap = new HashMap<String, RequiredInterceptorDefinition>();
 		 
-		 Set<EEventType> eventSet = new HashSet<EEventType>();
-		 for(String eventType: eventTypes) {
-			 EEventType event = EEventType.valueOf(eventType);
+		 final Set<EEventType> eventSet = new HashSet<EEventType>();
+		 for(final String eventType: eventTypes) {
+			 final EEventType event = EEventType.valueOf(eventType);
 			 if(event != null) {
 				 eventSet.add(event);
 			 }
 		 }
 		 
-		 Set<EPacketType> packetSet = new HashSet<EPacketType>();
-		 for(String packetType : packetTypes) {
-			 EPacketType packet = EPacketType.valueOf(packetType);
+		 final Set<EPacketType> packetSet = new HashSet<EPacketType>();
+		 for(final String packetType : packetTypes) {
+			 final EPacketType packet = EPacketType.valueOf(packetType);
 			 if(packet != null) {
 				 packetSet.add(packet);
 			 }
 		 }
 		 
-		 RequiredInterceptorDefinition def = new RequiredInterceptorDefinition(eventSet, packetSet);
+		 final RequiredInterceptorDefinition def = new RequiredInterceptorDefinition(eventSet, packetSet);
 		 definitionMap.put(name, def);
 		 
 		 return definitionMap;

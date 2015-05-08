@@ -32,7 +32,7 @@ public class InterceptorPersistenceUtility {
 			RequiredInterceptorDefinition interceptorDefinition = requiredInterceptors.get(interceptor);
 			
 			String joinedEventTypes = interceptorDefinition.getEventTypes().contains(EEventType.All) ? 
-					EEventType.All.toString() : join(interceptorDefinition.getEventTypes());
+					EEventType.All.name() : join(interceptorDefinition.getEventTypes());
 			 
 			if(!joinedEventTypes.isEmpty()) {
 				properties.put(BLOCKING_INTERCEPTOR_EVENT + "." + interceptor, joinedEventTypes);	

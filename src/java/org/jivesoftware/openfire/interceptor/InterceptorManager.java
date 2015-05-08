@@ -384,7 +384,7 @@ public class InterceptorManager {
     		
             for (PacketInterceptor2 requiredInterceptor : requiredInterceptors) {
                 try {
-                    if(requiredInterceptor.interceptPacket(packet, session, read, processed)) {
+                    if(requiredInterceptor.interceptPacket2(packet, session, read, processed)) {
                     	return;
                     }
                 }
@@ -467,14 +467,17 @@ public class InterceptorManager {
      */
     private void checkForRequiredInterceptors(Packet packet, boolean read, boolean processed) throws PacketRejectedException {
     	boolean result = false;
-
-    	if(this.eventTypesToBlock.size() > 0 && this.packetTypesToBlock.size() > 0) {
+    	if (this.eventTypesToBlock.isEmpty() && this.packetTypesToBlock.isEmpty()) {
+    		return;
+    	}
+    	
+    	if(!this.eventTypesToBlock.isEmpty() && !this.packetTypesToBlock.isEmpty()) {
     		result = shouldBlockEvent(processed, read) && shouldBlockPacket(packet);
     	}
-    	else if(this.eventTypesToBlock.size() > 0) {
+    	else if(!this.eventTypesToBlock.isEmpty()) {
     		result = shouldBlockEvent(processed, read);
     	}
-    	else if(this.packetTypesToBlock.size() > 0) {
+    	else if(!this.packetTypesToBlock.isEmpty()) {
     		result = shouldBlockPacket(packet);
     	}
     	
