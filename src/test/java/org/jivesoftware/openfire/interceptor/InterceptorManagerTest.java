@@ -427,7 +427,6 @@ public class InterceptorManagerTest {
 		}catch(final PacketRejectedException pre) {}
 		
 		manager.invokeInterceptors(new Presence(), this.mockClientSession, false, true);
-		manager.invokeInterceptors(new Roster(), this.mockClientSession, false, false);
 	}
 	
 
@@ -510,7 +509,6 @@ public class InterceptorManagerTest {
 		}catch(final PacketRejectedException pre) {}
 		
  		manager.invokeInterceptors(new Presence(), this.mockClientSession, false, true);//outgoing
-		manager.invokeInterceptors(new Roster(), this.mockClientSession, false, false);//outgoing
 	}
 
 

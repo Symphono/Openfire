@@ -50,7 +50,7 @@ public class MUCEventDispatcherTest {
 	ReentrantReadWriteLock readWriteLock;
 	@Mock
 	WriteLock writeLock;
-	@Captor
+	@Captor 
 	ArgumentCaptor<Map<String, Set<EMUCEventType>>> captor;
 
 	@Before

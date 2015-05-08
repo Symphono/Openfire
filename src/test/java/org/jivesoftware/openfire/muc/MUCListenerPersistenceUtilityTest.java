@@ -38,9 +38,9 @@ public class MUCListenerPersistenceUtilityTest {
 	 public void whenThereAreNoRequiredListenersThenEmptyMapIsReturned() {
 		 PowerMockito.when(JiveGlobals.getProperty("muc.listeners.required")).thenReturn(null);
 		 
-		 MUCListenerPersistenceUtility util = new MUCListenerPersistenceUtility();
+		 final MUCListenerPersistenceUtility util = new MUCListenerPersistenceUtility();
 		 
-		 Map<String, Set<EMUCEventType>>results = util.loadRequiredListeners();
+		 final Map<String, Set<EMUCEventType>>results = util.loadRequiredListeners();
 		 
 		 assertEquals(0, results.size()); 
 	 }
@@ -51,12 +51,12 @@ public class MUCListenerPersistenceUtilityTest {
 		 PowerMockito.when(JiveGlobals.getProperty("muc.listeners.required")).thenReturn("One,Two,Three");
 		 PowerMockito.when(JiveGlobals.getProperty("muc.listener.blocking.event.One")).thenReturn(null);
 		 
-		 MUCListenerPersistenceUtility util = new MUCListenerPersistenceUtility();
+		 final MUCListenerPersistenceUtility util = new MUCListenerPersistenceUtility();
 		 
-		 Map<String, Set<EMUCEventType>>results = util.loadRequiredListeners();
+		 final Map<String, Set<EMUCEventType>>results = util.loadRequiredListeners();
 		 assertEquals(3, results.size());
 		 
-		 for(Set<EMUCEventType> val : results.values()) {
+		 for(final Set<EMUCEventType> val : results.values()) {
 			 assertEquals(0, val.size());
 		 }
 	 }
@@ -70,12 +70,12 @@ public class MUCListenerPersistenceUtilityTest {
 
 		 PowerMockito.when(JiveGlobals.getProperty("muc.listener.blocking.event.Two")).thenReturn("BeforePrivateMessageReceived");
 		 
-		 MUCListenerPersistenceUtility util = new MUCListenerPersistenceUtility();
+		 final MUCListenerPersistenceUtility util = new MUCListenerPersistenceUtility();
 		 
-		 Map<String, Set<EMUCEventType>>results = util.loadRequiredListeners();
+		 final Map<String, Set<EMUCEventType>>results = util.loadRequiredListeners();
 		 assertEquals(3, results.size());
 		 
-		 Set<EMUCEventType> setOne = results.get("One");
+		 final Set<EMUCEventType> setOne = results.get("One");
 		 assertEquals(4, setOne.size());
 		 
 		 assertTrue(setOne.contains(EMUCEventType.BeforeCreated));
@@ -83,11 +83,11 @@ public class MUCListenerPersistenceUtilityTest {
 		 assertTrue(setOne.contains(EMUCEventType.BeforeDestroyed));
 		 assertTrue(setOne.contains(EMUCEventType.BeforeSubjectChanged));
 		 
-		 Set<EMUCEventType> setTwo = results.get("Two");
+		 final Set<EMUCEventType> setTwo = results.get("Two");
 		 assertEquals(1, setTwo.size());		 
 		 assertTrue(setTwo.contains(EMUCEventType.BeforePrivateMessageReceived));
 		 
-		 Set<EMUCEventType> setThree = results.get("Three");
+		 final Set<EMUCEventType> setThree = results.get("Three");
 		 assertEquals(0, setThree.size());
 		 assertEquals(0, setThree.size());
 	 }
@@ -96,9 +96,9 @@ public class MUCListenerPersistenceUtilityTest {
 	 
 	 @Test
 	 public void whenNoListenersArePresentThenPropertiesAreNotPersisted() {
-		 Map<String, Set<EMUCEventType>> requiredListeners = new HashMap<String, Set<EMUCEventType>>();
+		 final Map<String, Set<EMUCEventType>> requiredListeners = new HashMap<String, Set<EMUCEventType>>();
 
-		 MUCListenerPersistenceUtility util = new MUCListenerPersistenceUtility();
+		 final MUCListenerPersistenceUtility util = new MUCListenerPersistenceUtility();
 		 
 		 util.persistRequiredListeners(requiredListeners);
 		 PowerMockito.verifyStatic(never());
@@ -108,13 +108,13 @@ public class MUCListenerPersistenceUtilityTest {
 	 
 	 @Test
 	 public void whenRequiredEventTypesAreNotPresentThenNoListenersArePersisted() {
-		 Map<String, Set<EMUCEventType>> requiredListeners = new HashMap<String, Set<EMUCEventType>>();
-		 Set<EMUCEventType> emptyEventTypeSet = Collections.<EMUCEventType>emptySet();
+		 final Map<String, Set<EMUCEventType>> requiredListeners = new HashMap<String, Set<EMUCEventType>>();
+		 final Set<EMUCEventType> emptyEventTypeSet = Collections.<EMUCEventType>emptySet();
 
 		 requiredListeners.put("One", emptyEventTypeSet);
 		 requiredListeners.put("Two", emptyEventTypeSet);
 
-		 MUCListenerPersistenceUtility util = new MUCListenerPersistenceUtility();
+		 final MUCListenerPersistenceUtility util = new MUCListenerPersistenceUtility();
 		 
 		 util.persistRequiredListeners(requiredListeners);
 		 PowerMockito.verifyStatic(never());   
@@ -124,40 +124,40 @@ public class MUCListenerPersistenceUtilityTest {
 
 	 @Test
 	 public void whenRequiedListenersArePersistedThenSetPropertiesIsCalled() {
-		 Map<String, Set<EMUCEventType>> requiredListeners = new HashMap<String, Set<EMUCEventType>>();
-		 Set<EMUCEventType> eventSet1 = new HashSet<EMUCEventType>();
+		 final Map<String, Set<EMUCEventType>> requiredListeners = new HashMap<String, Set<EMUCEventType>>();
+		 final Set<EMUCEventType> eventSet1 = new HashSet<EMUCEventType>();
 		 eventSet1.add(EMUCEventType.BeforeCreated);
 		 eventSet1.add(EMUCEventType.BeforeDestroyed);
 		 eventSet1.add(EMUCEventType.BeforeJoined);
 		 
-		 Set<EMUCEventType> eventSet2 = new HashSet<EMUCEventType>();
+		 final Set<EMUCEventType> eventSet2 = new HashSet<EMUCEventType>();
 		 eventSet2.add(EMUCEventType.BeforeNickChanged);
 		 eventSet2.add(EMUCEventType.BeforeMessageReceived);		 
 		 
 		 requiredListeners.put("One", eventSet1);
 		 requiredListeners.put("Two", eventSet2);
 
-		 MUCListenerPersistenceUtility util = new MUCListenerPersistenceUtility();
+		 final MUCListenerPersistenceUtility util = new MUCListenerPersistenceUtility();
 		 
 		 util.persistRequiredListeners(requiredListeners);
 		 PowerMockito.verifyStatic();
 		 JiveGlobals.setProperties(captor.capture());
 		 
-		 Map<String, String> properties = captor.getValue();
+		 final Map<String, String> properties = captor.getValue();
 		 		 
 		 assertEquals(3, properties.size());
 		 
-		 String requiredListenerProperty = properties.get("muc.listeners.required");
+		 final String requiredListenerProperty = properties.get("muc.listeners.required");
 		 assertTrue(requiredListenerProperty.indexOf("One") > -1);
 		 assertTrue(requiredListenerProperty.indexOf("Two") > -1);
 		 
-		 String requiredEventTypes1 = properties.get("muc.listener.blocking.event.One");
+		 final String requiredEventTypes1 = properties.get("muc.listener.blocking.event.One");
 		 
 		 assertTrue( requiredEventTypes1.indexOf("BeforeCreated") > -1);
 		 assertTrue( requiredEventTypes1.indexOf("BeforeDestroyed") > -1);
 		 assertTrue( requiredEventTypes1.indexOf("BeforeJoined") > -1);
 		 
-		 String requiredEventTypes2 = properties.get("muc.listener.blocking.event.Two");
+		 final String requiredEventTypes2 = properties.get("muc.listener.blocking.event.Two");
 		 
 		 assertTrue( requiredEventTypes2.indexOf("BeforeNickChanged") > -1);
 		 assertTrue( requiredEventTypes2.indexOf("BeforeMessageReceived") > -1);
