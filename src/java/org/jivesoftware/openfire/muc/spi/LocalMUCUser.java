@@ -469,6 +469,9 @@ public class LocalMUCUser implements MUCUser {
                         try {
                             // Get or create the room
                             MUCRoom room = server.getChatRoom(group, packet.getFrom());
+                            if(room == null) {
+                            	return;
+                            }
                             // User must support MUC in order to create a room
                             Element mucInfo = packet.getChildElement("x",
                                     "http://jabber.org/protocol/muc");
@@ -489,7 +492,7 @@ public class LocalMUCUser implements MUCUser {
                                     packet.createCopy());
                             // If the client that created the room is non-MUC compliant then
                             // unlock the room thus creating an "instant" room
-                            if (mucInfo == null && room.isLocked() && !room.isManuallyLocked()) {
+                            if (role != null && mucInfo == null && room.isLocked() && !room.isManuallyLocked()) {
                                 room.unlock(role);
                             }
                         }

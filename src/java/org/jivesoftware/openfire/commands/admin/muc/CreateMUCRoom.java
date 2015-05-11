@@ -105,16 +105,17 @@ public class CreateMUCRoom extends AdHocCommand {
             note.setText("No permission to create rooms.");
             return;
         }
-
-        boolean isPersistent = "1".equals(get(data, "persistent", 0));
-        room.setPersistent(isPersistent);
-
-        boolean isPublic = "1".equals(get(data, "public", 0));
-        room.setPublicRoom(isPublic);
-
-        String password = get(data, "password", 0);
-        if (password != null) {
-            room.setPassword(password);
+        if(room != null) {
+	        boolean isPersistent = "1".equals(get(data, "persistent", 0));
+	        room.setPersistent(isPersistent);
+	
+	        boolean isPublic = "1".equals(get(data, "public", 0));
+	        room.setPublicRoom(isPublic);
+	
+	        String password = get(data, "password", 0);
+	        if (password != null) {
+	            room.setPassword(password);
+	        }
         }
     }
 
