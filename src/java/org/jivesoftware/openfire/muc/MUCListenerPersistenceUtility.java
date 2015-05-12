@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import org.jivesoftware.util.JiveGlobals;
 import org.slf4j.Logger;
@@ -13,35 +16,41 @@ import org.slf4j.LoggerFactory;
 public class MUCListenerPersistenceUtility {
 	
 	private static final Logger Log = LoggerFactory.getLogger(MUCListenerPersistenceUtility.class);
-
+	private static final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 	String REQUIRED_LISTENERS_PROPERTY = "muc.listeners.required";
 	String BLOCKING_LISTENER_EVENT =  "muc.listener.blocking.event";
 
-	public synchronized void persistRequiredListeners(final Map<String, Set<EMUCEventType>> requiredListeners) {
-		final Map<String, String> properties = new HashMap<String, String>();
-		String delim = "";
-		final StringBuilder sb = new StringBuilder();
-		
-		for (final String listener : requiredListeners.keySet()) {
-			sb.append(delim).append(listener);
-			delim = ",";
-
-			final Set<EMUCEventType> eventTypeSet = requiredListeners.get(listener);
+	public void persistRequiredListeners(final Map<String, Set<EMUCEventType>> requiredListeners) {
+		final WriteLock lock = readWriteLock.writeLock();
+		lock.lock();
+		try {
+			final Map<String, String> properties = new HashMap<String, String>();
+			String delim = "";
+			final StringBuilder sb = new StringBuilder();
 			
-			final String joinedEventTypes = join(eventTypeSet);
-			 
-			if(!joinedEventTypes.isEmpty()) {
-				properties.put(BLOCKING_LISTENER_EVENT + "." + listener, joinedEventTypes);	
+			for (final String listener : requiredListeners.keySet()) {
+				sb.append(delim).append(listener);
+				delim = ",";
+	
+				final Set<EMUCEventType> eventTypeSet = requiredListeners.get(listener);
+				
+				final String joinedEventTypes = join(eventTypeSet);
+				 
+				if(!joinedEventTypes.isEmpty()) {
+					properties.put(BLOCKING_LISTENER_EVENT + "." + listener, joinedEventTypes);	
+				}
 			}
-		}
-
-		final String requiredListenerValue = sb.toString().trim();
-		if(!requiredListenerValue.isEmpty() && !properties.isEmpty()) {
-			properties.put(REQUIRED_LISTENERS_PROPERTY, requiredListenerValue);
-			JiveGlobals.setProperties(properties);
-		} else {
-			JiveGlobals.deleteProperty(REQUIRED_LISTENERS_PROPERTY);
-			JiveGlobals.deleteProperty(BLOCKING_LISTENER_EVENT);
+	
+			final String requiredListenerValue = sb.toString().trim();
+			if(!requiredListenerValue.isEmpty() && !properties.isEmpty()) {
+				properties.put(REQUIRED_LISTENERS_PROPERTY, requiredListenerValue);
+				JiveGlobals.setProperties(properties);
+			} else {
+				JiveGlobals.deleteProperty(REQUIRED_LISTENERS_PROPERTY);
+				JiveGlobals.deleteProperty(BLOCKING_LISTENER_EVENT);
+			}
+		} finally {
+			lock.unlock();
 		}
 	}
 
@@ -58,41 +67,48 @@ public class MUCListenerPersistenceUtility {
 
 	public Map<String, Set<EMUCEventType>> loadRequiredListeners() {
 		final Map<String, Set<EMUCEventType>> requiredMUCListeners = new HashMap<String, Set<EMUCEventType>>();
-		final String requiredListeners = JiveGlobals.getProperty(REQUIRED_LISTENERS_PROPERTY);
-		
-		if(requiredListeners != null) {
-			final String[] listenersArray = requiredListeners.split(",");
-			
-			for (int i = 0; i < listenersArray.length; i++) {
-				final String listener = listenersArray[i] != null ? listenersArray[i].trim() : "";
-				if(listener.isEmpty()) {
-					continue;
-				}
 
-				final String blockingEvents = JiveGlobals.getProperty(BLOCKING_LISTENER_EVENT + "." + listener);
+		final ReadLock lock = readWriteLock.readLock();
+		lock.lock();
+		try {
+			final String requiredListeners = JiveGlobals.getProperty(REQUIRED_LISTENERS_PROPERTY);
+			
+			if(requiredListeners != null) {
+				final String[] listenersArray = requiredListeners.split(",");
 				
-				final Set<EMUCEventType> eventTypes = new HashSet<EMUCEventType>();
-				
-				if (blockingEvents != null) {
-					final String[] blockingEventsArray = blockingEvents.split(",");
-					
-					for (int j = 0; j < blockingEventsArray.length; j++) {
-						final String event = blockingEventsArray[j] != null ? blockingEventsArray[j].trim() : "";
-						if(event.isEmpty()) {
-							continue;
-						}
-						
-						final EMUCEventType eventType = convertToMUCEventType(event);
-						if(eventType == null) {
-							continue;
-						}
-						
-						eventTypes.add(eventType);
+				for (int i = 0; i < listenersArray.length; i++) {
+					final String listener = listenersArray[i] != null ? listenersArray[i].trim() : "";
+					if(listener.isEmpty()) {
+						continue;
 					}
-				}
 	
-				requiredMUCListeners.put(listener, eventTypes);
+					final String blockingEvents = JiveGlobals.getProperty(BLOCKING_LISTENER_EVENT + "." + listener);
+					
+					final Set<EMUCEventType> eventTypes = new HashSet<EMUCEventType>();
+					
+					if (blockingEvents != null) {
+						final String[] blockingEventsArray = blockingEvents.split(",");
+						
+						for (int j = 0; j < blockingEventsArray.length; j++) {
+							final String event = blockingEventsArray[j] != null ? blockingEventsArray[j].trim() : "";
+							if(event.isEmpty()) {
+								continue;
+							}
+							
+							final EMUCEventType eventType = convertToMUCEventType(event);
+							if(eventType == null) {
+								continue;
+							}
+							
+							eventTypes.add(eventType);
+						}
+					}
+		
+					requiredMUCListeners.put(listener, eventTypes);
+				}
 			}
+		} finally {
+			lock.unlock();
 		}
 		return requiredMUCListeners;
 	}
