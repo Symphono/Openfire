@@ -17,35 +17,38 @@ public class MUCListenerPersistenceUtility {
 	String REQUIRED_LISTENERS_PROPERTY = "muc.listeners.required";
 	String BLOCKING_LISTENER_EVENT =  "muc.listener.blocking.event";
 
-	public synchronized void persistRequiredListeners(Map<String, Set<EMUCEventType>> requiredListeners) {
-		Map<String, String> properties = new HashMap<String, String>();
+	public synchronized void persistRequiredListeners(final Map<String, Set<EMUCEventType>> requiredListeners) {
+		final Map<String, String> properties = new HashMap<String, String>();
 		String delim = "";
-		StringBuilder sb = new StringBuilder();
+		final StringBuilder sb = new StringBuilder();
 		
-		for (String listener : requiredListeners.keySet()) {
+		for (final String listener : requiredListeners.keySet()) {
 			sb.append(delim).append(listener);
 			delim = ",";
 
-			Set<EMUCEventType> eventTypeSet = requiredListeners.get(listener);
+			final Set<EMUCEventType> eventTypeSet = requiredListeners.get(listener);
 			
-			String joinedEventTypes = join(eventTypeSet);
+			final String joinedEventTypes = join(eventTypeSet);
 			 
 			if(!joinedEventTypes.isEmpty()) {
 				properties.put(BLOCKING_LISTENER_EVENT + "." + listener, joinedEventTypes);	
 			}
 		}
 
-		String requiredListenerValue = sb.toString().trim();
+		final String requiredListenerValue = sb.toString().trim();
 		if(!requiredListenerValue.isEmpty() && !properties.isEmpty()) {
 			properties.put(REQUIRED_LISTENERS_PROPERTY, requiredListenerValue);
 			JiveGlobals.setProperties(properties);
+		} else {
+			JiveGlobals.deleteProperty(REQUIRED_LISTENERS_PROPERTY);
+			JiveGlobals.deleteProperty(BLOCKING_LISTENER_EVENT);
 		}
 	}
 
-	private <T> String join(Collection<T> items) {
-		StringBuilder sb = new StringBuilder();
+	private <T> String join(final Collection<T> items) {
+		final StringBuilder sb = new StringBuilder();
 		String delim = "";
-		for(T item : items) {
+		for(final T item : items) {
 			sb.append(delim).append(item);
 			delim = ",";
 		}
@@ -54,32 +57,32 @@ public class MUCListenerPersistenceUtility {
 	}
 
 	public Map<String, Set<EMUCEventType>> loadRequiredListeners() {
-		Map<String, Set<EMUCEventType>> requiredMUCListeners = new HashMap<String, Set<EMUCEventType>>();
-		String requiredListeners = JiveGlobals.getProperty(REQUIRED_LISTENERS_PROPERTY);
+		final Map<String, Set<EMUCEventType>> requiredMUCListeners = new HashMap<String, Set<EMUCEventType>>();
+		final String requiredListeners = JiveGlobals.getProperty(REQUIRED_LISTENERS_PROPERTY);
 		
 		if(requiredListeners != null) {
-			String[] listenersArray = requiredListeners.split(",");
+			final String[] listenersArray = requiredListeners.split(",");
 			
 			for (int i = 0; i < listenersArray.length; i++) {
-				String listener = listenersArray[i] != null ? listenersArray[i].trim() : "";
+				final String listener = listenersArray[i] != null ? listenersArray[i].trim() : "";
 				if(listener.isEmpty()) {
 					continue;
 				}
 
-				String blockingEvents = JiveGlobals.getProperty(BLOCKING_LISTENER_EVENT + "." + listener);
+				final String blockingEvents = JiveGlobals.getProperty(BLOCKING_LISTENER_EVENT + "." + listener);
 				
-				Set<EMUCEventType> eventTypes = new HashSet<EMUCEventType>();
+				final Set<EMUCEventType> eventTypes = new HashSet<EMUCEventType>();
 				
 				if (blockingEvents != null) {
-					String[] blockingEventsArray = blockingEvents.split(",");
+					final String[] blockingEventsArray = blockingEvents.split(",");
 					
 					for (int j = 0; j < blockingEventsArray.length; j++) {
-						String event = blockingEventsArray[j] != null ? blockingEventsArray[j].trim() : "";
+						final String event = blockingEventsArray[j] != null ? blockingEventsArray[j].trim() : "";
 						if(event.isEmpty()) {
 							continue;
 						}
 						
-						EMUCEventType eventType = convertToMUCEventType(event);
+						final EMUCEventType eventType = convertToMUCEventType(event);
 						if(eventType == null) {
 							continue;
 						}
@@ -94,11 +97,11 @@ public class MUCListenerPersistenceUtility {
 		return requiredMUCListeners;
 	}
 	
-	private EMUCEventType convertToMUCEventType(String eventType) {
+	private EMUCEventType convertToMUCEventType(final String eventType) {
 		EMUCEventType eEvent = null;
 		try {
 			eEvent = EMUCEventType.valueOf(eventType);
-		} catch(IllegalArgumentException ia) {
+		} catch(final IllegalArgumentException ia) {
 			Log.warn("{} is not a valid EMUCEventType", eventType);
 		}
 		
