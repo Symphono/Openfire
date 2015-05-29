@@ -32,12 +32,19 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
+import org.apache.xml.utils.NameSpace;
+import org.dom4j.Element;
+import org.dom4j.Namespace;
+import org.dom4j.QName;
 import org.jivesoftware.openfire.DuplicateRegistrationException;
 import org.jivesoftware.openfire.XMPPServer;
 import org.jivesoftware.openfire.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xmpp.packet.JID;
+import org.xmpp.packet.Message;
 import org.xmpp.packet.Packet;
+import org.xmpp.packet.PacketError.Condition;
 
 
 /**
@@ -127,6 +134,7 @@ public class InterceptorManager {
     	}    	
     	
     	RequiredInterceptorDefinition requiredInterceptorDefinition = new RequiredInterceptorDefinition(eventTypes, packetTypes);
+    	Log.debug("Adding required interceptor: name={}, packetTypes={}, eventTypes={}", name, packetTypes, eventTypes);
     	
     	WriteLock lock = readWriteLock.writeLock();
     	lock.lock();
@@ -153,7 +161,10 @@ public class InterceptorManager {
      * 
      */
     public void removeRequiredInterceptor(String name, boolean markAsNotRequired) {
-    	synchronized(this) {
+    	Log.debug("Removing required interceptor: name={}, markAsNotRequired={}", name, markAsNotRequired);
+    	WriteLock lock = readWriteLock.writeLock();
+    	lock.lock();
+    	try {
 	    	PacketInterceptor2 interceptor = this.requiredInterceptorsByName.remove(name);
 	    	if(interceptor != null) {
 	    		requiredInterceptors.remove(interceptor);
@@ -163,6 +174,8 @@ public class InterceptorManager {
 	    		allRequiredInterceptors.remove(name);
 	    	}    	
 	    	determinePacketTypesToBlock();
+    	} finally {
+    		lock.unlock();
     	}
     	
     	if(markAsNotRequired) {
@@ -197,6 +210,8 @@ public class InterceptorManager {
     	
     	this.eventTypesToBlock = eventTypesToBlock;
     	this.packetTypesToBlock = packetTypesToBlock;
+    	
+    	Log.trace("Packet types to block: eventTypesToBlock={}, packetTypesToBlock={}", eventTypesToBlock, packetTypesToBlock);
     }
  
     
@@ -466,26 +481,45 @@ public class InterceptorManager {
      * @throws PacketRejectedException - thrown when required interceptors are not present and a packet has to be blocked
      */
     private void checkForRequiredInterceptors(Packet packet, boolean read, boolean processed) throws PacketRejectedException {
-    	boolean result = false;
+    	boolean shouldBlock = false;
+    	Log.trace("Checking for required interceptors: packet={}, read={}, processed={}, eventTypesToBlock={}, packetTypesToBlock={}", packet.getClass().getSimpleName(), read, processed, eventTypesToBlock, packetTypesToBlock);
     	if (this.eventTypesToBlock.isEmpty() && this.packetTypesToBlock.isEmpty()) {
     		return;
     	}
     	
-    	if(!this.eventTypesToBlock.isEmpty() && !this.packetTypesToBlock.isEmpty()) {
-    		result = shouldBlockEvent(processed, read) && shouldBlockPacket(packet);
+    	if (!this.eventTypesToBlock.isEmpty() && !this.packetTypesToBlock.isEmpty()){
+    		shouldBlock = shouldBlockEvent(processed, read) && shouldBlockPacket(packet);
     	}
     	else if(!this.eventTypesToBlock.isEmpty()) {
-    		result = shouldBlockEvent(processed, read);
+    		shouldBlock = shouldBlockEvent(processed, read);
     	}
     	else if(!this.packetTypesToBlock.isEmpty()) {
-    		result = shouldBlockPacket(packet);
+    		shouldBlock = shouldBlockPacket(packet);
     	}
     	
-    	if(result) {
-    		rejectPacket();
+    	if(shouldBlock) {
+    		Log.trace("Rejecting this packet");
+    		PacketRejectedException exception = new PacketRejectedException();
+    		//if it's just a chat state notification, then simply ignore it and don't send back an error message
+    		if (!isChatStateMessage(packet)){
+	    		exception.setErrorCondition(Condition.not_allowed);
+	        	exception.setErrorText(packet.getClass().getSimpleName() + " rejected due to a required component that's not present. Contact your system administrator.");
+	        	if (packet instanceof Message){
+	        		exception.setRejectionMessage(exception.getErrorText());
+	        	}
+    		}
+        	throw exception;
     	}
     }
         
+    private boolean isChatStateMessage(Packet packet){
+    	if (!(packet instanceof Message) || packet.getElement().nodeCount() > 1){
+    		return false;
+    	}
+    	Object next = packet.getElement().elementIterator().next();
+    	return next instanceof Element && ((Element)next).getNamespaceURI().equalsIgnoreCase("http://jabber.org/protocol/chatstates");
+    }
+    
     /**
      * Checks against a list of event types if, based on both flags, this event should be blocked
      * 
@@ -499,6 +533,7 @@ public class InterceptorManager {
     private boolean shouldBlockEvent(boolean processed, boolean read) {
 
     	boolean result = false;
+    	Log.trace("Should the event be blocked? processed={}, read={}, eventTypesToBlock={}", processed, read, eventTypesToBlock);
     	
     	if(this.eventTypesToBlock.contains(EEventType.All)) {
     		return true;
@@ -549,9 +584,5 @@ public class InterceptorManager {
     	}
     	
     	return result;
-    }
-
-    private void rejectPacket() throws PacketRejectedException {
-    	throw new PacketRejectedException();
     }
 }
