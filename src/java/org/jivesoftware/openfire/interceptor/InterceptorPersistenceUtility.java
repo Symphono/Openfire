@@ -56,10 +56,12 @@ public class InterceptorPersistenceUtility {
 			if(!requiredInterceptorsValue.isEmpty() && !properties.isEmpty()) {
 				properties.put(REQUIRED_INTERCEPTORS_PROPERTY, requiredInterceptorsValue);
 				JiveGlobals.setProperties(properties);
+				Log.debug("Setting required interceptors properties: {}", properties);
 			} else {
 				JiveGlobals.deleteProperty(REQUIRED_INTERCEPTORS_PROPERTY);
 				JiveGlobals.deleteProperty(BLOCKING_INTERCEPTOR_TYPE);
 				JiveGlobals.deleteProperty(BLOCKING_INTERCEPTOR_EVENT);
+				Log.debug("Deleted required interceptor configs");
 			}
 		} finally {
 			lock.unlock();
@@ -84,7 +86,7 @@ public class InterceptorPersistenceUtility {
 		lock.lock();
 		try {
 			final String requiredInterceptors = JiveGlobals.getProperty(REQUIRED_INTERCEPTORS_PROPERTY);
-			
+			Log.debug("Loaded required interceptors: {}", requiredInterceptors);
 			if(requiredInterceptors != null) {
 				final String[] interceptorArray = requiredInterceptors.split(",");
 				
@@ -146,6 +148,7 @@ public class InterceptorPersistenceUtility {
 						}
 					}
 		
+					Log.debug("Processed required interceptor config for {}: eventTypes={}, packetTypes={}", interceptor, eventTypes, packetTypes);
 					requiredInterceptorsMap.put(interceptor, new RequiredInterceptorDefinition(eventTypes, packetTypes));
 				}
 			}

@@ -23,6 +23,9 @@ package org.jivesoftware.openfire.interceptor;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 
+import org.xmpp.packet.JID;
+import org.xmpp.packet.PacketError;
+
 /**
  * Thrown by a PacketInterceptor when a packet is prevented from being processed. If the packet was
  * received then it will not be processed and a not_allowed error will be sent back to the sender
@@ -41,6 +44,22 @@ public class PacketRejectedException extends Exception {
      * rejected. If no text is specified then no message will be sent to the user.
      */
     private String rejectionMessage;
+    
+    /**
+     * The error condition that should be used if the default is not a good choice.
+     */
+    private PacketError.Condition errorCondition;
+    
+    /**
+     * The error text if there is a specific one.
+     */
+    private String errorText;
+    
+    /**
+     * The from JID if a different one than the recipient's JID should be used in the packet error
+     * response.
+     */
+    private JID errorFromJid;
 
     public PacketRejectedException() {
         super();
@@ -84,7 +103,7 @@ public class PacketRejectedException extends Exception {
     }
 
     /**
-     * Retuns the text to include in a message that will be sent to the sender of the packet
+     * Returns the text to include in a message that will be sent to the sender of the packet
      * that got rejected or <tt>null</tt> if none was defined. If no text was specified then
      * no message will be sent to the sender of the rejected packet.
      *
@@ -98,11 +117,63 @@ public class PacketRejectedException extends Exception {
     /**
      * Sets the text to include in a message that will be sent to the sender of the packet
      * that got rejected or <tt>null</tt> if no message will be sent to the sender of the
-     * rejected packet. Bt default, no message will be sent.
+     * rejected packet. By default, no message will be sent.
      *
      * @param rejectionMessage the text to include in the notification message for the rejection.
      */
     public void setRejectionMessage(String rejectionMessage) {
         this.rejectionMessage = rejectionMessage;
+    }
+    
+    /**
+     * Returns the error condition to use when sending an packet error back rather than using the
+     * default value. 
+     * Depending on what packet processing caused this exception, a packet error is not always
+     * included. If this condition is set, then the packet error will always be set and will
+     * be set to this value. 
+     */
+    public PacketError.Condition getErrorCondition(){
+    	return errorCondition;
+    }
+    
+    /**
+     * Set the error condition to use when sending an packet error back rather than useing
+     * the default value.
+     * Depending on what packet processing caused this exception, a packet error is not always
+     * included. If this condition is set, then the packet error will always be set and will
+     * be set to this value. 
+     */
+    public void setErrorCondition(PacketError.Condition errorCondition){
+    	this.errorCondition = errorCondition;
+    }
+    
+    /**
+     * Returns the text to be included as the text in the packet error.
+     */
+    public String getErrorText(){
+    	return errorText;
+    }
+    
+    /**
+     * Set the text to be included as the text in the packet error.
+     * @param errorText
+     */
+    public void setErrorText(String errorText){
+    	this.errorText = errorText;
+    }
+    
+    /**
+     * Returns the JID to be used in a packet error response if it shouldn't be the recipient's
+     * JID.
+     */
+    public JID getErrorFromJid(){
+    	return errorFromJid;
+    }
+    
+    /**
+     * Set the packet error from JID if not the recipient's JID should be used.
+     */
+    public void setErrorFromJid(JID fromJid){
+    	this.errorFromJid = fromJid;
     }
 }
