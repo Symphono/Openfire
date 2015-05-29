@@ -211,8 +211,20 @@ function obtainAudioAndVideoPermissions(callback) {
             video: stream.getVideoTracks().length
         });
     }
+    
+    var media = ['audio', 'video'];
+    var resolution = config.resolution || '360';
+    
+    if (urlParam("novideo"))
+    {
+    	media = ['audio'];
+    	resolution = null;
+    }
+    
+    console.log("using media", media);
+    
     getUserMediaWithConstraints(
-        ['audio', 'video'],
+        media,
         cb,
         function (error) {
             console.error('failed to obtain audio/video stream - trying audio only', error);
@@ -231,7 +243,7 @@ function obtainAudioAndVideoPermissions(callback) {
                 }
             );
         },
-        config.resolution || '360');
+        resolution);
 }
 
 function maybeDoJoin() {
@@ -250,6 +262,9 @@ function generateRoomName() {
     if (config.getroomnode && typeof config.getroomnode === 'function') {
         // custom function might be responsible for doing the pushstate
         roomnode = config.getroomnode(path);
+        
+        if (roomnode.length > 13 && "web%2Bmeet%3A" == roomnode.substring(0, 13)) roomnode = roomnode.substring(14);
+        
     } else {
         /* fall back to default strategy
          * this is making assumptions about how the URL->room mapping happens.
@@ -281,6 +296,13 @@ function doJoin() {
     Moderator.allocateConferenceFocus(
         roomName, doJoinAfterFocus);
 }
+
+function urlParam(name)
+{
+	var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
+	if (!results) { return undefined; }
+	return unescape(results[1] || undefined);
+};
 
 function doJoinAfterFocus() {
 
@@ -1311,6 +1333,27 @@ $(document).ready(function () {
         {
             enter_room();
         });
+
+        $("#register_protocol_button").click(function()
+        {
+		try {
+			navigator.registerProtocolHandler("web+meet", window.location.protocol + "//" + window.location.host + "/ofmeet/?r=%s", "Openfire Meetings");
+		}
+		catch (e) {
+			console.error("Failed to set navigator.registerProtocolHandler " + e);
+		}
+        });   
+        
+        $("#unregister_protocol_button").click(function()
+        {
+		try {
+			navigator.unregisterProtocolHandler("web+meet", window.location.protocol + "//" + window.location.host + "/ofmeet/?r=%s");
+		}
+		catch (e) {
+			console.error("Failed to set navigator.unregisterProtocolHandler " + e);
+		}
+        });          
+        
 
         $("#enter_room_field").keydown(function (event) {
             if (event.keyCode === 13 /* enter */) {

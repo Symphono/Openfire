@@ -182,7 +182,16 @@ TraceablePeerConnection.prototype.setLocalDescription = function (description, s
         },
         function (err) {
             self.trace('setLocalDescriptionOnFailure', err);
-            failureCallback(err);
+	    
+	    if (err.indexOf("Called in wrong state") > -1)
+	    {
+	    	setTimeout(function()
+	    	{
+	    		self.setLocalDescription(description, successCallback, failureCallback);
+	    	
+	    	}, 1000);
+	    
+	    } else failureCallback(err);
         }
     );
     /*
@@ -339,17 +348,6 @@ TraceablePeerConnection.prototype.modifySources = function(successCallback) {
     // FIXME: this is a big hack
     // https://code.google.com/p/webrtc/issues/detail?id=2688
     // ^ has been fixed.
-    if (!(this.signalingState == 'stable' && this.iceConnectionState == 'connected')) {
-        console.warn('modifySources not yet', this.signalingState, this.iceConnectionState);
-        this.wait = true;
-        window.setTimeout(function() { self.modifySources(successCallback); }, 250);
-        return;
-    }
-    if (this.wait) {
-        window.setTimeout(function() { self.modifySources(successCallback); }, 2500);
-        this.wait = false;
-        return;
-    }
 
     // Reset switch streams flag
     this.switchstreams = false;
@@ -580,7 +578,7 @@ function setupRTC() {
             browser: 'chrome',
             getUserMedia: navigator.webkitGetUserMedia.bind(navigator),
             attachMediaStream: function (element, stream) {
-                element.attr('src', webkitURL.createObjectURL(stream));
+                element.attr('src', URL.createObjectURL(stream));
             },
             // DTLS should now be enabled by default but..
             pc_constraints: {'optional': [{'DtlsSrtpKeyAgreement': 'true'}]},
@@ -677,55 +675,58 @@ function getUserMediaWithConstraints(um, success_callback, failure_callback, res
         }
     }
 
-    // Check if we are running on Android device
-    var isAndroid = navigator.userAgent.indexOf('Android') != -1;
+    if (constraints.video) {
+	    // Check if we are running on Android device
+	    var isAndroid = navigator.userAgent.indexOf('Android') != -1;
 
-    if (resolution && !constraints.video || isAndroid) {
-        constraints.video = { mandatory: {}, optional: [] };// same behaviour as true
+	    if (resolution && !constraints.video || isAndroid) {
+		constraints.video = { mandatory: {}, optional: [] };// same behaviour as true
+	    }
+	    // see https://code.google.com/p/chromium/issues/detail?id=143631#c9 for list of supported resolutions
+	    switch (resolution) {
+		// 16:9 first
+		case '1080':
+		case 'fullhd':
+		    constraints.video.mandatory.minWidth = 1920;
+		    constraints.video.mandatory.minHeight = 1080;
+		    break;
+		case '720':
+		case 'hd':
+		    constraints.video.mandatory.minWidth = 1280;
+		    constraints.video.mandatory.minHeight = 720;
+		    break;
+		case '360':
+		    constraints.video.mandatory.minWidth = 640;
+		    constraints.video.mandatory.minHeight = 360;
+		    break;
+		case '180':
+		    constraints.video.mandatory.minWidth = 320;
+		    constraints.video.mandatory.minHeight = 180;
+		    break;
+		// 4:3
+		case '960':
+		    constraints.video.mandatory.minWidth = 960;
+		    constraints.video.mandatory.minHeight = 720;
+		    break;
+		case '640':
+		case 'vga':
+		    constraints.video.mandatory.minWidth = 640;
+		    constraints.video.mandatory.minHeight = 480;
+		    break;
+		case '320':
+		    constraints.video.mandatory.minWidth = 320;
+		    constraints.video.mandatory.minHeight = 240;
+		    break;
+		default:
+		    if (isAndroid) {
+			constraints.video.mandatory.minWidth = 320;
+			constraints.video.mandatory.minHeight = 240;
+			constraints.video.mandatory.maxFrameRate = 15;
+		    }
+		    break;
+	    }
     }
-    // see https://code.google.com/p/chromium/issues/detail?id=143631#c9 for list of supported resolutions
-    switch (resolution) {
-        // 16:9 first
-        case '1080':
-        case 'fullhd':
-            constraints.video.mandatory.minWidth = 1920;
-            constraints.video.mandatory.minHeight = 1080;
-            break;
-        case '720':
-        case 'hd':
-            constraints.video.mandatory.minWidth = 1280;
-            constraints.video.mandatory.minHeight = 720;
-            break;
-        case '360':
-            constraints.video.mandatory.minWidth = 640;
-            constraints.video.mandatory.minHeight = 360;
-            break;
-        case '180':
-            constraints.video.mandatory.minWidth = 320;
-            constraints.video.mandatory.minHeight = 180;
-            break;
-        // 4:3
-        case '960':
-            constraints.video.mandatory.minWidth = 960;
-            constraints.video.mandatory.minHeight = 720;
-            break;
-        case '640':
-        case 'vga':
-            constraints.video.mandatory.minWidth = 640;
-            constraints.video.mandatory.minHeight = 480;
-            break;
-        case '320':
-            constraints.video.mandatory.minWidth = 320;
-            constraints.video.mandatory.minHeight = 240;
-            break;
-        default:
-            if (isAndroid) {
-                constraints.video.mandatory.minWidth = 320;
-                constraints.video.mandatory.minHeight = 240;
-                constraints.video.mandatory.maxFrameRate = 15;
-            }
-            break;
-    }
+    
     if (constraints.video)
     {
 	    if (constraints.video.mandatory.minWidth)

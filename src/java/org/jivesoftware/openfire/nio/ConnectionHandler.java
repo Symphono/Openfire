@@ -108,11 +108,19 @@ public abstract class ConnectionHandler extends IoHandlerAdapter {
     }
 
     @Override
-	public void sessionClosed(IoSession session) throws Exception {
-        // Get the connection for this session
-        Connection connection = (Connection) session.getAttribute(CONNECTION);
-        // Inform the connection that it was closed
-        connection.close();
+    public void inputClosed( IoSession session ) throws Exception {
+        final Connection connection = (Connection) session.getAttribute(CONNECTION);
+        if ( connection != null ) {
+            connection.close();
+        }
+    }
+
+    @Override
+    public void sessionClosed(IoSession session) throws Exception {
+        final Connection connection = (Connection) session.getAttribute(CONNECTION);
+        if ( connection != null ) {
+            connection.close();
+        }
     }
 
     /**
@@ -120,55 +128,50 @@ public abstract class ConnectionHandler extends IoHandlerAdapter {
 	 * session idle time as specified by {@link #getMaxIdleTime()}. This method
 	 * will be invoked each time that such a period passes (even if no IO has
 	 * occurred in between).
-	 * 
+	 *
 	 * Openfire will disconnect a session the second time this method is
 	 * invoked, if no IO has occurred between the first and second invocation.
 	 * This allows extensions of this class to use the first invocation to check
 	 * for livelyness of the MINA session (e.g by polling the remote entity, as
 	 * {@link ClientConnectionHandler} does).
-	 * 
-	 * @see org.apache.mina.common.IoHandlerAdapter#sessionIdle(org.apache.mina.common.IoSession,
-	 *      org.apache.mina.common.IdleStatus)
+	 *
+	 * @see IoHandlerAdapter#sessionIdle(IoSession, IdleStatus)
 	 */
     @Override
 	public void sessionIdle(IoSession session, IdleStatus status) throws Exception {
         if (session.getIdleCount(status) > 1) {
             // Get the connection for this session
             final Connection connection = (Connection) session.getAttribute(CONNECTION);
-	        // Close idle connection
-	        if (Log.isDebugEnabled()) {
-	            Log.debug("ConnectionHandler: Closing connection that has been idle: " + connection);
-	        }
-	        connection.close();
+            if (connection != null) {
+                // Close idle connection
+                if (Log.isDebugEnabled()) {
+                    Log.debug("ConnectionHandler: Closing connection that has been idle: " + connection);
+                }
+                connection.close();
+            }
         }
     }
 
     @Override
-	public void exceptionCaught(IoSession session, Throwable cause) throws Exception {
-        if (cause instanceof IOException) {
-            // TODO Verify if there were packets pending to be sent and decide what to do with them
-            Log.info("ConnectionHandler reports IOException for session: " + session, cause);
-            if (cause instanceof SSLHandshakeException) {
-                session.close(true);
-            }
-        }
-        else if (cause instanceof ProtocolDecoderException) {
-            Log.warn("Closing session due to exception: " + session, cause);
-            
-            // PIO-524: Determine stream:error message.
+    public void exceptionCaught(IoSession session, Throwable cause) throws Exception {
+        Log.warn("Closing connection due to exception in session: " + session, cause);
+
+        try {
+            // OF-524: Determine stream:error message.
             final StreamError error;
-            if (cause.getCause() != null && cause.getCause() instanceof XMLNotWellFormedException) {
-            	error = new StreamError(StreamError.Condition.not_well_formed);
+            if ( cause != null && (cause instanceof XMLNotWellFormedException || (cause.getCause() != null && cause.getCause() instanceof XMLNotWellFormedException) ) ) {
+                error = new StreamError( StreamError.Condition.not_well_formed );
             } else {
-            	error = new StreamError(StreamError.Condition.internal_server_error);
+                error = new StreamError( StreamError.Condition.internal_server_error );
             }
 
-            final Connection connection = (Connection) session.getAttribute(CONNECTION);
-            connection.deliverRawText(error.toXML());
-            session.close(true);
-        }
-        else {
-            Log.error("ConnectionHandler reports unexpected exception for session: " + session, cause);
+            final Connection connection = (Connection) session.getAttribute( CONNECTION );
+            connection.deliverRawText( error.toXML() );
+        } finally {
+            final Connection connection = (Connection) session.getAttribute( CONNECTION );
+            if (connection != null) {
+                connection.close();
+            }
         }
     }
 
@@ -189,13 +192,16 @@ public abstract class ConnectionHandler extends IoHandlerAdapter {
             handler.process((String) message, parser);
         } catch (Exception e) {
             Log.error("Closing connection due to error while processing message: " + message, e);
-            Connection connection = (Connection) session.getAttribute(CONNECTION);
-            connection.close();
+            final Connection connection = (Connection) session.getAttribute(CONNECTION);
+            if ( connection != null ) {
+                connection.close();
+            }
+
         }
     }
 
     @Override
-	public void messageSent(IoSession session, Object message) throws Exception {
+    public void messageSent(IoSession session, Object message) throws Exception {
         super.messageSent(session, message);
         // Update counter of written btyes
         updateWrittenBytesCounter(session);

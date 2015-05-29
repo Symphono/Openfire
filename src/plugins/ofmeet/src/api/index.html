@@ -11,11 +11,18 @@
 			overflow-x: hidden;
 		}
     </style>
-    <script src="ofmeet.js?v=1"></script>
+    <script src="../chrome-extension/ofmeet-api.js?v=1"></script>
     <script>
 		var conn = null;
 		var visible = false;
 		var joined = false;
+
+		function urlParam(name)
+		{
+			var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
+			if (!results) { return undefined; }
+			return unescape(results[1] || undefined);
+		};
 
 		$(document).bind('ofmeet.connected', function (event, connection)
 		{
@@ -55,13 +62,14 @@
 		$(document).bind('ofmeet.ready', function ()
 		{
 			console.log("ofmeet.ready");
-			ofmeet.connect();
+			ofmeet.connect(urlParam("novideo"));
 		});
 
 		$(document).ready(function ()
 		{
 			console.log("document.ready");
-			ofmeet.ready("deleolajide", "969131");
+			//ofmeet.ready("username", "password");
+			ofmeet.ready();
 		});
 
 		$(document).bind('remotevideo.resized', function (event, width, height)

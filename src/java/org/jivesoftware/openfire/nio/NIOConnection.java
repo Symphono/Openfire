@@ -24,7 +24,9 @@ import static org.jivesoftware.openfire.spi.ConnectionManagerImpl.EXECUTOR_FILTE
 import static org.jivesoftware.openfire.spi.ConnectionManagerImpl.TLS_FILTER_NAME;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
@@ -75,6 +77,8 @@ public class NIOConnection implements Connection {
 
 	private static final Logger Log = LoggerFactory.getLogger(NIOConnection.class);
 
+    public enum State { RUNNING, CLOSING, CLOSED }
+
     /**
      * The utf-8 charset for decoding and encoding XMPP packet streams.
      */
@@ -107,13 +111,14 @@ public class NIOConnection implements Connection {
      */
     private CompressionPolicy compressionPolicy = CompressionPolicy.disabled;
     private static ThreadLocal<CharsetEncoder> encoder = new ThreadLocalEncoder();
+
     /**
      * Flag that specifies if the connection should be considered closed. Closing a NIO connection
      * is an asynch operation so instead of waiting for the connection to be actually closed just
      * keep this flag to avoid using the connection between #close was used and the socket is actually
      * closed.
      */
-    private boolean closed;
+    private State state;
     
     /**
      * Lock used to ensure the integrity of the underlying IoSession (refer to
@@ -129,7 +134,7 @@ public class NIOConnection implements Connection {
     public NIOConnection(IoSession session, PacketDeliverer packetDeliverer) {
         this.ioSession = session;
         this.backupDeliverer = packetDeliverer;
-        closed = false;
+        state = State.RUNNING;
     }
 
     public boolean validate() {
@@ -159,15 +164,24 @@ public class NIOConnection implements Connection {
     }
 
     public byte[] getAddress() throws UnknownHostException {
-        return ((InetSocketAddress) ioSession.getRemoteAddress()).getAddress().getAddress();
+        final SocketAddress remoteAddress = ioSession.getRemoteAddress();
+        final InetSocketAddress socketAddress = (InetSocketAddress) remoteAddress;
+        final InetAddress address = socketAddress.getAddress();
+        return address.getAddress();
     }
 
     public String getHostAddress() throws UnknownHostException {
-        return ((InetSocketAddress) ioSession.getRemoteAddress()).getAddress().getHostAddress();
+        final SocketAddress remoteAddress = ioSession.getRemoteAddress();
+        final InetSocketAddress socketAddress = (InetSocketAddress) remoteAddress;
+        final InetAddress inetAddress = socketAddress.getAddress();
+        return inetAddress.getHostAddress();
     }
 
     public String getHostName() throws UnknownHostException {
-        return ((InetSocketAddress) ioSession.getRemoteAddress()).getAddress().getHostName();
+        final SocketAddress remoteAddress = ioSession.getRemoteAddress();
+        final InetSocketAddress socketAddress = (InetSocketAddress) remoteAddress;
+        final InetAddress inetAddress = socketAddress.getAddress();
+        return inetAddress.getHostName();
     }
 
     public Certificate[] getLocalCertificates() {
@@ -185,7 +199,10 @@ public class NIOConnection implements Connection {
                 return sslSession.getPeerCertificates();
             }
         } catch (SSLPeerUnverifiedException e) {
-            Log.warn("Error retrieving client certificates of: " + session, e);
+            if (Log.isTraceEnabled()) {
+                // This is perfectly acceptable when mutual authentication is not enforced by Openfire configuration.
+                Log.trace( "Peer does not offer certificates in session: " + session, e);
+            }
         }
         return new Certificate[0];
     }
@@ -202,26 +219,53 @@ public class NIOConnection implements Connection {
         return backupDeliverer;
     }
 
-    public void close() {
-    	synchronized(this) {
-    		if (isClosed()) {
-    			return;
-    		}
-            try {
-                deliverRawText(flashClient ? "</flash:stream>" : "</stream:stream>", false);
-            } catch (Exception e) {
-                // Ignore
+    public void close()
+    {
+        boolean notifyClose = false;
+        synchronized ( this ) {
+            try
+            {
+                if ( state == State.CLOSED )
+                {
+                    return;
+                }
+
+                // This prevents any action after the first invocation of close() on this connection.
+                if ( state != State.CLOSING )
+                {
+                    state = State.CLOSING;
+                    try
+                    {
+                        deliverRawText( flashClient ? "</flash:stream>" : "</stream:stream>" );
+                    }
+                    catch ( Exception e )
+                    {
+                        // Ignore
+                    }
+                }
+
+                // deliverRawText might already have forced the state from Closing to Closed. In that case, there's no need
+                // to invoke the CloseListeners again.
+                if ( state == State.CLOSING )
+                {
+                    notifyClose = true;
+                }
             }
-            if (session != null) {
-                session.setStatus(Session.STATUS_CLOSED);
+            finally
+            {
+                // Ensure that the state of this connection, its session and the MINA context are eventually closed.
+                state = State.CLOSED;
+                if ( session != null )
+                {
+                    session.setStatus( Session.STATUS_CLOSED );
+                }
+                ioSession.close( true );
             }
-            closed = true;
-    	}
-    	
-    	// OF-881: Notify any close listeners after the synchronized block has completed. 
-    	notifyCloseListeners(); // clean up session, etc.
-    	
-        ioSession.close(false); // async via MINA
+        }
+        if (notifyClose)
+        {
+            notifyCloseListeners(); // clean up session, etc.
+        }
     }
 
     public void systemShutdown() {
@@ -249,7 +293,7 @@ public class NIOConnection implements Connection {
     }
 
     public synchronized boolean isClosed() {
-        return closed;
+        return state == State.CLOSED;
     }
 
     public boolean isSecure() {
@@ -310,12 +354,7 @@ public class NIOConnection implements Connection {
     }
 
     public void deliverRawText(String text) {
-        // Deliver the packet in asynchronous mode
-        deliverRawText(text, true);
-    }
-
-    private void deliverRawText(String text, boolean asynchronous) {
-        if (!isClosed()) {
+        if (state != State.CLOSED) {
             boolean errorDelivering = false;
             IoBuffer buffer = IoBuffer.allocate(text.length());
             buffer.setAutoExpand(true);
@@ -329,22 +368,12 @@ public class NIOConnection implements Connection {
                 buffer.flip();
                 ioSessionLock.lock();
                 try {
-                    if (asynchronous) {
-                        // OF-464: handle dropped connections (no backupDeliverer in this case?)
-                        if (!ioSession.isConnected()) {
-                            throw new IOException("Connection reset/closed by peer");
-                        }
-                        ioSession.write(buffer);
+                    // OF-464: handle dropped connections (no backupDeliverer in this case?)
+                    if (!ioSession.isConnected()) {
+                        throw new IOException("Connection reset/closed by peer");
                     }
-                    else {
-                        // Send stanza and wait for ACK (using a 2 seconds default timeout)
-                        boolean ok =
-                                ioSession.write(buffer).awaitUninterruptibly(JiveGlobals.getIntProperty("connection.ack.timeout", 2000));
-                        if (!ok) {
-                            Log.warn("No ACK was received when sending stanza to: " + this.toString());
-                        }
-                    }
-                } 
+                    ioSession.write(buffer);
+                }
                 finally {
                     ioSessionLock.unlock();
                 }
@@ -354,8 +383,8 @@ public class NIOConnection implements Connection {
                 errorDelivering = true;
             }
 
-            // Close the connection if delivering text fails and we are already not closing the connection
-            if (errorDelivering && asynchronous) {
+            // Attempt to close the connection if delivering text fails.
+            if (errorDelivering) {
                 close();
             }
         }
@@ -395,7 +424,12 @@ public class NIOConnection implements Connection {
         SslFilter filter = new SslFilter(tlsContext);
         filter.setUseClientMode(clientMode);
         // Disable SSLv3 due to POODLE vulnerability.
-        filter.setEnabledProtocols(new String[]{"TLSv1", "TLSv1.1", "TLSv1.2"});
+        if (clientMode) {
+            filter.setEnabledProtocols(new String[]{"TLSv1", "TLSv1.1", "TLSv1.2"});
+        } else {
+            // ... but accept a SSLv2 Hello when in server mode.
+            filter.setEnabledProtocols(new String[]{"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"});
+        }
         if (authentication == ClientAuth.needed) {
             filter.setNeedClientAuth(true);
         }
