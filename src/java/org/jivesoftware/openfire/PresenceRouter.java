@@ -98,8 +98,12 @@ public class PresenceRouter extends BasicModule {
                 Presence reply = new Presence();
                 reply.setID(packet.getID());
                 reply.setTo(session.getAddress());
-                reply.setFrom(packet.getTo());
-                reply.setError(PacketError.Condition.not_allowed);
+                reply.setFrom(e.getErrorFromJid() == null ? packet.getTo() : e.getErrorFromJid());
+                PacketError error = new PacketError(e.getErrorCondition() == null ? PacketError.Condition.not_allowed : e.getErrorCondition());
+                if (e.getErrorText() != null && !e.getErrorText().trim().isEmpty()){
+                	error.setText(e.getErrorText());
+                }
+                reply.setError(error);
                 session.process(reply);
                 // Check if a message notifying the rejection should be sent
                 if (e.getRejectionMessage() != null && e.getRejectionMessage().trim().length() > 0) {
