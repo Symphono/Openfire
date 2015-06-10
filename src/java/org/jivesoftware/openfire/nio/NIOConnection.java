@@ -118,7 +118,7 @@ public class NIOConnection implements Connection {
      * keep this flag to avoid using the connection between #close was used and the socket is actually
      * closed.
      */
-    private State state;
+    private volatile State state;
     
     /**
      * Lock used to ensure the integrity of the underlying IoSession (refer to
@@ -164,24 +164,27 @@ public class NIOConnection implements Connection {
     }
 
     public byte[] getAddress() throws UnknownHostException {
-        final SocketAddress remoteAddress = ioSession.getRemoteAddress();
-        final InetSocketAddress socketAddress = (InetSocketAddress) remoteAddress;
-        final InetAddress address = socketAddress.getAddress();
-        return address.getAddress();
+        try {
+            return ((InetSocketAddress) ioSession.getRemoteAddress()).getAddress().getAddress();
+        } catch (NullPointerException e) {
+            throw new UnknownHostException();
+        }
     }
 
     public String getHostAddress() throws UnknownHostException {
-        final SocketAddress remoteAddress = ioSession.getRemoteAddress();
-        final InetSocketAddress socketAddress = (InetSocketAddress) remoteAddress;
-        final InetAddress inetAddress = socketAddress.getAddress();
-        return inetAddress.getHostAddress();
+        try { 
+            return ((InetSocketAddress) ioSession.getRemoteAddress()).getAddress().getHostAddress();
+        } catch (NullPointerException e) {
+            throw new UnknownHostException();
+        }
     }
 
     public String getHostName() throws UnknownHostException {
-        final SocketAddress remoteAddress = ioSession.getRemoteAddress();
-        final InetSocketAddress socketAddress = (InetSocketAddress) remoteAddress;
-        final InetAddress inetAddress = socketAddress.getAddress();
-        return inetAddress.getHostName();
+        try {
+            return ((InetSocketAddress) ioSession.getRemoteAddress()).getAddress().getHostName();
+        } catch (NullPointerException e) {
+            throw new UnknownHostException();
+        }
     }
 
     public Certificate[] getLocalCertificates() {
@@ -299,7 +302,7 @@ public class NIOConnection implements Connection {
         session = owner;
     }
 
-    public synchronized boolean isClosed() {
+    public boolean isClosed() {
         return state == State.CLOSED;
     }
 
@@ -308,7 +311,7 @@ public class NIOConnection implements Connection {
     }
 
     public void deliver(Packet packet) throws UnauthorizedException {
-        if (isClosed()) {
+        if (state != State.RUNNING) {
         	// OF-857: Do not allow the backup deliverer to recurse
         	if (backupDeliverer == null) {
         		Log.error("Failed to deliver packet: " + packet.toXML());
@@ -446,7 +449,7 @@ public class NIOConnection implements Connection {
             // good
             filter.setWantClientAuth(true);
         }
-        ioSession.getFilterChain().addAfter(EXECUTOR_FILTER_NAME, TLS_FILTER_NAME, filter);
+        ioSession.getFilterChain().addBefore(EXECUTOR_FILTER_NAME, TLS_FILTER_NAME, filter);
         ioSession.setAttribute(SslFilter.DISABLE_ENCRYPTION_ONCE, Boolean.TRUE);
 
         if (!clientMode) {
