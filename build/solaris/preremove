@@ -11,6 +11,9 @@ if [ -d "/opt/openfire" ]; then
 	if [ -f /opt/openfire/conf/security.xml ]; then
 		/bin/cp -f /opt/openfire/conf/security.xml /tmp/openfireInstallBackup/security.xml
 	fi
+	if [ -f /opt/openfire/conf/modules.xml ]; then
+		/bin/cp -f /opt/openfire/conf/modules.xml /tmp/openfireInstallBackup/modules.xml
+	fi
 	if [ -f /opt/openfire/resources/security/keystore ]; then
 		/bin/cp -f /opt/openfire/resources/security/keystore /tmp/openfireInstallBackup/keystore
 	fi
@@ -19,6 +22,9 @@ if [ -d "/opt/openfire" ]; then
 	fi
 	if [ -f /opt/openfire/resources/security/client.truststore ]; then
 		/bin/cp -f /opt/openfire/resources/security/client.truststore /tmp/openfireInstallBackup/client.truststore
+	fi
+	if [ -f /opt/openfire/lib/log4j.xml ]; then
+		/bin/cp -f /opt/openfire/lib/log4j.xml /tmp/openfireInstallBackup/log4j.xml
 	fi
 
 	if [ -x "/usr/sbin/svcadm" ]; then

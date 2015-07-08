@@ -113,11 +113,12 @@ exit 0
 %{homedir}/bin/embedded-db-viewer.sh
 %dir %{homedir}/conf
 %config(noreplace) %{homedir}/conf/openfire.xml
+%config(noreplace) %{homedir}/conf/modules.xml
 %config(noreplace) %{homedir}/conf/security.xml
 %config(noreplace) %{homedir}/conf/crowd.properties
 %dir %{homedir}/lib
 %{homedir}/lib/*.jar
-%{homedir}/lib/log4j.xml
+%config(noreplace) %{homedir}/lib/log4j.xml
 %dir %{homedir}/logs
 %dir %{homedir}/plugins
 %{homedir}/plugins/search.jar

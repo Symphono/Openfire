@@ -164,27 +164,27 @@ public class NIOConnection implements Connection {
     }
 
     public byte[] getAddress() throws UnknownHostException {
-        try {
-            return ((InetSocketAddress) ioSession.getRemoteAddress()).getAddress().getAddress();
-        } catch (NullPointerException e) {
-            throw new UnknownHostException();
-        }
+        final SocketAddress remoteAddress = ioSession.getRemoteAddress();
+        if (remoteAddress == null) throw new UnknownHostException();
+        final InetSocketAddress socketAddress = (InetSocketAddress) remoteAddress;
+        final InetAddress address = socketAddress.getAddress();
+        return address.getAddress();
     }
 
     public String getHostAddress() throws UnknownHostException {
-        try { 
-            return ((InetSocketAddress) ioSession.getRemoteAddress()).getAddress().getHostAddress();
-        } catch (NullPointerException e) {
-            throw new UnknownHostException();
-        }
+        final SocketAddress remoteAddress = ioSession.getRemoteAddress();
+        if (remoteAddress == null) throw new UnknownHostException();
+        final InetSocketAddress socketAddress = (InetSocketAddress) remoteAddress;
+        final InetAddress inetAddress = socketAddress.getAddress();
+        return inetAddress.getHostAddress();
     }
 
     public String getHostName() throws UnknownHostException {
-        try {
-            return ((InetSocketAddress) ioSession.getRemoteAddress()).getAddress().getHostName();
-        } catch (NullPointerException e) {
-            throw new UnknownHostException();
-        }
+        final SocketAddress remoteAddress = ioSession.getRemoteAddress();
+        if (remoteAddress == null) throw new UnknownHostException();
+        final InetSocketAddress socketAddress = (InetSocketAddress) remoteAddress;
+        final InetAddress inetAddress = socketAddress.getAddress();
+        return inetAddress.getHostName();
     }
 
     public Certificate[] getLocalCertificates() {
