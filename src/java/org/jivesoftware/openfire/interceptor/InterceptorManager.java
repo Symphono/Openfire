@@ -32,7 +32,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
-import org.apache.xml.utils.NameSpace;
 import org.dom4j.Element;
 import org.dom4j.Namespace;
 import org.dom4j.QName;
@@ -71,13 +70,13 @@ public class InterceptorManager {
     private static final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     
     private XMPPServer server = XMPPServer.getInstance();
-    private List<PacketInterceptor> globalInterceptors = new CopyOnWriteArrayList<PacketInterceptor>();
+    private List<PacketInterceptor> globalInterceptors = new CopyOnWriteArrayList<>();
     
-    private final Map<String, PacketInterceptor2> requiredInterceptorsByName = new ConcurrentHashMap<String, PacketInterceptor2>();
-    private final Map<String, RequiredInterceptorDefinition> allRequiredInterceptors = new ConcurrentHashMap<String, RequiredInterceptorDefinition>();
-    private final List<PacketInterceptor2> requiredInterceptors = new CopyOnWriteArrayList<PacketInterceptor2>();
+    private final Map<String, PacketInterceptor2> requiredInterceptorsByName = new ConcurrentHashMap<>();
+    private final Map<String, RequiredInterceptorDefinition> allRequiredInterceptors = new ConcurrentHashMap<>();
+    private final List<PacketInterceptor2> requiredInterceptors = new CopyOnWriteArrayList<>();
         
-    private Map<String, List<PacketInterceptor>> usersInterceptors = new ConcurrentHashMap<String, List<PacketInterceptor>>();
+    private Map<String, List<PacketInterceptor>> usersInterceptors = new ConcurrentHashMap<>();
   
     private InterceptorPersistenceUtility persistenceUtility;
     
@@ -325,7 +324,7 @@ public class InterceptorManager {
     public void addUserInterceptor(String username, int index, PacketInterceptor interceptor) {
         List<PacketInterceptor> userInterceptors = usersInterceptors.get(username);
         if (userInterceptors == null) {
-            userInterceptors = new CopyOnWriteArrayList<PacketInterceptor>();
+            userInterceptors = new CopyOnWriteArrayList<>();
             usersInterceptors.put(username, userInterceptors);
         }
         else {

@@ -76,8 +76,6 @@ public class IQQueryHandler extends AbstractIQHandler implements
 			}
 		}
 
-		sendAcknowledgementResult(packet, session);
-
 		final QueryRequest queryRequest = new QueryRequest(packet.getChildElement(), archiveJid);
 		Collection<ArchivedMessage> archivedMessages = retrieveMessages(queryRequest);
 
@@ -86,6 +84,8 @@ public class IQQueryHandler extends AbstractIQHandler implements
 		}
 
 		sendFinalMessage(session, queryRequest);
+
+		sendAcknowledgementResult(packet, session);
 
 		return null;
 	}
@@ -177,6 +177,7 @@ public class IQQueryHandler extends AbstractIQHandler implements
 			final QueryRequest queryRequest) {
 
 		Message finalMessage = new Message();
+		finalMessage.setTo(session.getAddress());
 		Element fin = finalMessage.addChildElement("fin", NAMESPACE);
 		if(queryRequest.getQueryid() != null) {
 			fin.addAttribute("queryid", queryRequest.getQueryid());

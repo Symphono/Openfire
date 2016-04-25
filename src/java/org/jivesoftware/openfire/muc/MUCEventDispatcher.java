@@ -50,13 +50,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
  */
 public class MUCEventDispatcher {
 	
-    private static Collection<MUCEventListener> listeners = new ConcurrentLinkedQueue<MUCEventListener>();
+    private static Collection<MUCEventListener> listeners = new ConcurrentLinkedQueue<>();
     
     private static final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     
     private static final MUCListenerPersistenceUtility persistenceUtility;
-    private static Map<String, MUCEventListener2> requiredListenersByName = new ConcurrentHashMap<String, MUCEventListener2>();
-    private static Collection<MUCEventListener2> requiredListeners = new ConcurrentLinkedQueue<MUCEventListener2>();
+    private static Map<String, MUCEventListener2> requiredListenersByName = new ConcurrentHashMap<>();
+    private static Collection<MUCEventListener2> requiredListeners = new ConcurrentLinkedQueue<>();
     private static Map<String, Set<EMUCEventType>> allRequiredListeners;
     private static Set<EMUCEventType> eventTypesToBlock;
   
